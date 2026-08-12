@@ -1,0 +1,16 @@
+body {
+  background-color: #121212; 
+}
+
+h1, h2, h3, h4 {
+  color: #ffffff;
+}
+
+section {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease-in-out;
+}
+
+section:hover {
+  transform: translateY(-2px);
+}
