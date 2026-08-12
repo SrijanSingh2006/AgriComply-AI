@@ -17,7 +17,8 @@ const FileCard = ({ file }) => {
 
   // Base URL for viewing files (Points to your backend static folder)
   // Ensure your backend is serving static files from 'uploads'
-  const fileUrl = `http://localhost:5000/${file.file_path}`; 
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const fileUrl = `${API_BASE_URL}/${file.file_path}`; 
 
   return (
     <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between">

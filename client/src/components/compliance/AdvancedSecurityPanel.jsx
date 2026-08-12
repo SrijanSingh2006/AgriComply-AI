@@ -40,7 +40,8 @@ export default function AdvancedSecurityPanel() {
     // Every 5 characters, send to backend to check if it's a Bot
     if (inputValue.length % 5 === 0 && flightTimes.current.length > 0) {
         try {
-            const res = await fetch('http://localhost:5001/api/security/keystrokes', {
+            const ML_URL = import.meta.env.VITE_ML_URL || 'http://localhost:5001';
+            const res = await fetch(`${ML_URL}/api/security/keystrokes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ flight_times: flightTimes.current })
@@ -86,7 +87,8 @@ export default function AdvancedSecurityPanel() {
     formData.append('file', file);
 
     try {
-        const res = await fetch('http://localhost:5001/api/security/hash-document', {
+        const ML_URL = import.meta.env.VITE_ML_URL || 'http://localhost:5001';
+        const res = await fetch(`${ML_URL}/api/security/hash-document`, {
             method: 'POST',
             body: formData
         });

@@ -19,7 +19,7 @@ export default function CreditScoreView() {
     try {
       const response = await fetch(`${ML_URL}/growth/credit-score`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify(formData)
       });
       const data = await response.json();

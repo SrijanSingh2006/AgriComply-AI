@@ -1,7 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.join(__dirname, '..', 'agricomply.db');
+const dbPath = process.env.VERCEL 
+  ? path.join('/tmp', 'agricomply.db') 
+  : path.join(__dirname, '..', 'agricomply.db');
 const sqlite = new Database(dbPath);
 
 // Enable WAL mode for better performance

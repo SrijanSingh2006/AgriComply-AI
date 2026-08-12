@@ -17,7 +17,7 @@ export default function ForgeryDetectionView() {
     try {
       const response = await fetch(`${ML_URL}/security/forgery-check`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify({ filePath })
       });
       

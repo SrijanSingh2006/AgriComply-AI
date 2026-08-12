@@ -18,7 +18,7 @@ export default function LegalChatbotView() {
     try {
       const response = await fetch(`${ML_URL}/admin/ingest-pdf`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify({ filePath: pdfPath })
       });
       const data = await response.json();
@@ -40,7 +40,7 @@ export default function LegalChatbotView() {
     try {
       const response = await fetch(`${ML_URL}/legal/ask`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true' },
         body: JSON.stringify({ question })
       });
       const data = await response.json();

@@ -39,8 +39,13 @@ export default function ComplianceDashboard() {
     });
 
     try {
-        const res = await fetch('http://127.0.0.1:5001/api/bundler/process-bundle', {
-            method: 'POST', body: formData
+        const ML_URL = import.meta.env.VITE_ML_URL || 'http://localhost:5001';
+        const res = await fetch(`${ML_URL}/api/bundler/process-bundle`, {
+          method: 'POST',
+          headers: {
+            'Bypass-Tunnel-Reminder': 'true'
+          },
+          body: formData
         });
         setConsistencyData(await res.json());
     } catch (err) { 
@@ -63,8 +68,11 @@ export default function ComplianceDashboard() {
     formData.append('file', file);
 
     try {
-        const res = await fetch('http://127.0.0.1:5001/api/bundler/optimize', {
-            method: 'POST', body: formData
+        const ML_URL = import.meta.env.VITE_ML_URL || 'http://localhost:5001';
+        const res = await fetch(`${ML_URL}/api/bundler/optimize`, {
+            method: 'POST',
+            headers: { 'Bypass-Tunnel-Reminder': 'true' },
+            body: formData
         });
         setOptimizedData(await res.json());
     } catch (err) { console.error("Optimization failed", err); }
