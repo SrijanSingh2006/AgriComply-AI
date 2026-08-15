@@ -1,7 +1,6 @@
 import os
 import json
 import numpy as np
-import torch
 import hashlib
 import cv2
 import base64
