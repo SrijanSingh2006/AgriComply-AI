@@ -5,31 +5,34 @@ import fitz  # PyMuPDF
 from PIL import Image
 import io
 import traceback
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+client = None
 if api_key:
-    genai.configure(api_key=api_key)
+    client = genai.Client(api_key=api_key)
 
-EMBEDDING_MODEL = 'models/gemini-embedding-001'
-CHAT_MODEL = genai.GenerativeModel('gemini-2.5-flash')
+EMBEDDING_MODEL = 'text-embedding-004'
+CHAT_MODEL_NAME = 'gemini-2.5-flash'
 
 # 🌟 NEW: Dynamic Database (No more hardcoded 768 dimension)
 vector_index = None
 document_chunks = []
 
 def embed_text_batch(texts):
-    """Embeds text without the buggy task_type parameters."""
+    """Embeds text using the new google-genai SDK."""
+    if not client:
+        raise ValueError("Gemini API client is not initialized.")
     if isinstance(texts, str):
         texts = [texts]
         
-    result = genai.embed_content(
+    response = client.models.embed_content(
         model=EMBEDDING_MODEL,
-        content=texts
+        contents=texts
     )
-    return result['embedding']
+    return [e.values for e in response.embeddings]
 
 def ingest_pdf_to_vector_db(pdf_path):
     global vector_index, document_chunks
@@ -49,7 +52,14 @@ def ingest_pdf_to_vector_db(pdf_path):
                 print(f"   -> Page {page_num + 1}: Running AI OCR...")
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
                 img = Image.open(io.BytesIO(pix.tobytes("png")))
-                response = CHAT_MODEL.generate_content(["Extract all text and numbers.", img])
+                
+                if not client:
+                    raise ValueError("Gemini API client is not initialized.")
+                
+                response = client.models.generate_content(
+                    model=CHAT_MODEL_NAME,
+                    contents=["Extract all text and numbers.", img]
+                )
                 combined_text += response.text + "\n"
         pdf_document.close()
     except Exception as e:
@@ -95,13 +105,16 @@ def query_rag_bot(user_question):
         return "The database is empty. Please upload a document first."
         
     try:
+        if not client:
+            return "Gemini API client is not initialized."
+            
         # Get embedding for the question
-        q_result = genai.embed_content(
+        response = client.models.embed_content(
             model=EMBEDDING_MODEL,
-            content=user_question
+            contents=user_question
         )
         
-        embedding_data = q_result['embedding']
+        embedding_data = [e.values for e in response.embeddings]
         if isinstance(embedding_data[0], list):
             embedding_data = embedding_data[0]
             
@@ -127,7 +140,10 @@ def query_rag_bot(user_question):
         QUESTION: {user_question}
         """
         
-        response = CHAT_MODEL.generate_content(prompt)
+        response = client.models.generate_content(
+            model=CHAT_MODEL_NAME,
+            contents=prompt
+        )
         
         try:
             return response.text
