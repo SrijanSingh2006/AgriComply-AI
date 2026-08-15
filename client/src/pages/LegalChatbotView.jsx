@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 
 export default function LegalChatbotView() {
-  const ML_URL = 'https://server-eta-rosy-45.vercel.app/api/ml';
+  const ML_URL = import.meta.env.VITE_ML_URL || 'https://agri-compli-ai.onrender.com';
 
   const [pdfPath, setPdfPath] = useState('');
   const [ingestStatus, setIngestStatus] = useState('');

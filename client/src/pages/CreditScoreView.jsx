@@ -11,7 +11,7 @@ export default function CreditScoreView() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const ML_URL = 'https://server-eta-rosy-45.vercel.app/api/ml';
+  const ML_URL = import.meta.env.VITE_ML_URL || 'https://agri-compli-ai.onrender.com';
 
   const handleCalculate = async (e) => {
     e.preventDefault();

@@ -6,7 +6,7 @@ export default function ForgeryDetectionView() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const ML_URL = 'https://server-eta-rosy-45.vercel.app/api/ml';
+  const ML_URL = import.meta.env.VITE_ML_URL || 'https://agri-compli-ai.onrender.com';
 
   const handleScan = async (e) => {
     e.preventDefault();
