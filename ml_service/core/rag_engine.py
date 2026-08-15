@@ -101,8 +101,37 @@ def ingest_pdf_to_vector_db(pdf_path):
 
 def query_rag_bot(user_question):
     global vector_index
+    
+    # If no documents ingested, use Gemini directly as a general agricultural legal AI
     if vector_index is None or vector_index.ntotal == 0:
-        return "The database is empty. Please upload a document first."
+        try:
+            if not client:
+                return "Gemini API client is not initialized."
+            
+            prompt = f"""
+            You are an expert Agricultural Legal Assistant specializing in Indian farming laws, 
+            government schemes (PM-KISAN, PMFBY, KCC, etc.), land records, compliance rules, 
+            and farmer rights. Answer the following question clearly and helpfully.
+            
+            If the question is not related to agriculture or farming, politely redirect the user.
+            
+            QUESTION: {user_question}
+            """
+            
+            response = client.models.generate_content(
+                model=CHAT_MODEL_NAME,
+                contents=prompt
+            )
+            
+            try:
+                return response.text
+            except ValueError:
+                return "Safety filter blocked response."
+                
+        except Exception as e:
+            print(f"\n❌ Direct Query Error: {type(e).__name__}")
+            traceback.print_exc()
+            return f"Chat Error: {type(e).__name__}"
         
     try:
         if not client:
@@ -154,3 +183,4 @@ def query_rag_bot(user_question):
         print(f"\n❌ Query Error Type: {type(e).__name__}")
         traceback.print_exc() 
         return f"Chat Error: {type(e).__name__}"
+
