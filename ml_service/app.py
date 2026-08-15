@@ -29,6 +29,10 @@ from core.rag_engine import query_rag_bot, ingest_pdf_to_vector_db
 from models import db, User, Profile, Document
 
 load_dotenv()
+api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+client = None
+if api_key:
+    client = genai.Client(api_key=api_key)
 
 app = Flask(__name__)
 
@@ -148,8 +152,11 @@ def process_bundle():
 
         try:
             print(f"🤖 Extracting data from {filename} using Gemini...")
-            # Upload to Gemini for Multimodal reading
-            gemini_file = genai.upload_file(path=file_path)
+            if not client:
+                raise ValueError("Gemini API client is not initialized.")
+            
+            # Upload to Gemini for Multimodal reading using new SDK
+            gemini_file = client.files.upload(file=file_path)
             #Levenshtein Distance
             prompt = """
             You are a strict KYC extraction AI.
@@ -157,12 +164,14 @@ def process_bundle():
             1. The Document Type (e.g., Aadhaar, PAN, 7/12 Land Record, Bank Statement). 
             2. The FULL NAME of the primary person on the document.
             Return ONLY a valid JSON object in this format:
-            {"doc_type": "PAN Card", "name": "Rajesh Kumar"}
+            {\"doc_type\": \"PAN Card\", \"name\": \"Rajesh Kumar\"}
             """
             
-            # Use the native GenAI model directly to bypass the custom wrapper
-            model = genai.GenerativeModel('gemini-1.5-flash')
-            response = model.generate_content([prompt, gemini_file])
+            # Use new SDK client
+            response = client.models.generate_content(
+                model='gemini-1.5-flash',
+                contents=[prompt, gemini_file]
+            )
             
             clean_json = response.text.replace("```json", "").replace("```", "").strip()
             parsed_data = json.loads(clean_json)
@@ -434,7 +443,7 @@ def advanced_check():
         if not extracted_info or 'not available' in extracted_info.lower():
             extracted_info = "Document is legally verified and present on file. (OCR data unavailable, assume document is valid)."
             
-        detailed_doc_contents += f"\n--- Document: {normalized_tag} ---\n{extracted_info}\n"
+        detailed_doc_contents += f"\\n--- Document: {normalized_tag} ---\\n{extracted_info}\\n"
     
     doc_summary = ", ".join(set(doc_tags))
 
@@ -450,15 +459,15 @@ def advanced_check():
     Task:
     Evaluate their actual eligibility based on the NUMBERS and FACTS provided. 
     CRITICAL RULES:
-    1. You MUST acknowledge that every document listed in "VERIFIED DOCUMENTS PRESENT ON FILE" is physically present and valid. DO NOT say they are missing Aadhaar, PAN, or any other listed document.
+    1. You MUST acknowledge that every document listed in \"VERIFIED DOCUMENTS PRESENT ON FILE\" is physically present and valid. DO NOT say they are missing Aadhaar, PAN, or any other listed document.
     2. If their bank balance/income is too low for a ₹{amount} loan over {tenure} years, tell them they are NOT eligible.
     3. If their project report costs don't match the loan amount, tell them they are NOT eligible.
     Output strictly valid JSON:
     {{
-        "eligible": true/false,
-        "confidence_score": 0-100,
-        "reasoning": "Detailed analysis using specific numbers. Do NOT claim verified documents are missing.",
-        "suggestion": "Specific actionable advice based on their actual financials."
+        \"eligible\": true/false,
+        \"confidence_score\": 0-100,
+        \"reasoning\": \"Detailed analysis using specific numbers. Do NOT claim verified documents are missing.\",
+        \"suggestion\": \"Specific actionable advice based on their actual financials.\"
     }}
     """
     
