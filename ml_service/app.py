@@ -178,7 +178,7 @@ def process_bundle():
             extracted_names[doc_type] = name
             
         except Exception as e:
-            print(f"❌ Failed to extract {filename}: {e}")
+            print(f"Failed to extract {filename}: {e}")
             extracted_names[filename] = "Extraction Failed"
 
     # 2. MATHEMATICAL CONSISTENCY PHASE (Levenshtein Distance)
@@ -506,6 +506,6 @@ def calculate_alt_credit_score():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
-    print(f"🚀 Starting Enterprise AgriComply Service on port {port}...")
+    print(f"Starting Enterprise AgriComply Service on port {port}...")
     # NOTE: The React frontend fetches from port 5001. Ensure it matches the URLs in your React components.
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)

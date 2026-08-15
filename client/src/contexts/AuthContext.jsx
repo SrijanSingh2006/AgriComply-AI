@@ -4,7 +4,10 @@ import api from '../services/api'; // Import your axios instance
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem('user');
+    return saved ? JSON.parse(saved) : null;
+  });
 
   // 1. The Login Function
   const login = async (email, password) => {
@@ -12,6 +15,7 @@ export const AuthProvider = ({ children }) => {
       const res = await api.post('/auth/login', { email, password });
       // Save token to localStorage so it persists on refresh
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('user', JSON.stringify(res.data.user));
       setUser(res.data.user);
       return { success: true };
     } catch (error) {
@@ -34,6 +38,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
   };
 

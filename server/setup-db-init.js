@@ -101,5 +101,18 @@ if (schemeCount.count === 0) {
   console.log(`✅ Seeded ${schemes.length} schemes`);
 }
 
+// Seed a demo user that always exists (for Vercel ephemeral DB)
+const bcrypt = require('bcryptjs');
+const demoEmail = 'ss1@gmail.com';
+const existingDemo = db.prepare('SELECT id FROM users WHERE email = ?').get(demoEmail);
+if (!existingDemo) {
+  const hashedPassword = bcrypt.hashSync('123', 10);
+  db.prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
+    'Demo User', demoEmail, hashedPassword, 'Farmer'
+  );
+  console.log('✅ Demo user seeded: ss1@gmail.com / 123');
+}
+
 console.log('✅ Database initialized successfully');
 db.close();
+

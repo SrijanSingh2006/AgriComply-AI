@@ -1,0 +1,36 @@
+services:
+  # ==========================================
+  # Python ML Service (Flask + Gunicorn)
+  # ==========================================
+  - type: web
+    name: agricomply-ml
+    runtime: python
+    rootDir: ml_service
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
+    envVars:
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.12.0
+
+  # ==========================================
+  # Node.js Backend (Express)
+  # ==========================================
+  - type: web
+    name: agricomply-server
+    runtime: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: node app.js
+    envVars:
+      - key: JWT_SECRET
+        value: agricomply_jwt_secret_key_2026
+      - key: ML_URL
+        value: https://agricomply-ml.onrender.com
+      - key: PORT
+        value: 5000

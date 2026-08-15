@@ -11,5 +11,9 @@
       "src": "/(.*)",
       "dest": "app.js"
     }
-  ]
+  ],
+  "env": {
+    "JWT_SECRET": "agricomply_jwt_secret_key_2026",
+    "ML_URL": "https://agricomply-ml.onrender.com"
+  }
 }

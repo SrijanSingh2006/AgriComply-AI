@@ -12,6 +12,7 @@ import GrowthView from './pages/GrowthView';
 import VaultView from './pages/VaultView';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register'; 
+import AutoLogin from './pages/Auth/AutoLogin'; 
 import LoanCalculator from './pages/LoanCalculator'; 
 
 // 🌟 NEW: Import our advanced ML Pages
@@ -52,6 +53,7 @@ function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/autologin" element={<AutoLogin />} />
 
             <Route path="/*" element={
               <ProtectedRoute>

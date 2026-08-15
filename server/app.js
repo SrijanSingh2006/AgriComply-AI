@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const https = require('https');
+const http = require('http');
 require('dotenv').config();
 
 // Auto-initialize database on startup (safe to run multiple times)
@@ -53,6 +55,46 @@ app.use('/api/growth', trackBRoutes);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', database: 'SQLite' });
+});
+
+// ML Proxy — forwards all /api/ml/* requests to the Python ML service
+// This way the frontend never needs to know the tunnel URL
+app.all('/api/ml/*', async (req, res) => {
+  const ML_URL = process.env.ML_URL || 'http://localhost:5001';
+  const targetPath = req.path.replace('/api/ml', '');
+  const targetUrl = `${ML_URL}${targetPath}`;
+
+  try {
+    const lib = targetUrl.startsWith('https') ? https : http;
+    const options = {
+      method: req.method,
+      headers: {
+        'Content-Type': req.headers['content-type'] || 'application/json',
+        'Bypass-Tunnel-Reminder': 'true',
+      },
+    };
+
+    const proxyReq = lib.request(targetUrl, options, (proxyRes) => {
+      res.status(proxyRes.statusCode);
+      Object.keys(proxyRes.headers).forEach(key => {
+        res.setHeader(key, proxyRes.headers[key]);
+      });
+      proxyRes.pipe(res);
+    });
+
+    proxyReq.on('error', (err) => {
+      console.error('ML Proxy error:', err.message);
+      res.status(502).json({ error: 'ML service unavailable', detail: err.message });
+    });
+
+    if (req.method !== 'GET' && req.body) {
+      proxyReq.write(JSON.stringify(req.body));
+    }
+    proxyReq.end();
+  } catch (err) {
+    console.error('ML Proxy exception:', err.message);
+    res.status(500).json({ error: 'Proxy failed', detail: err.message });
+  }
 });
 
 // Start Server
