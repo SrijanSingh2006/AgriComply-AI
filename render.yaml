@@ -8,7 +8,7 @@ services:
     rootDir: ml_service
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 1 --preload
     envVars:
       - key: GOOGLE_API_KEY
         sync: false
