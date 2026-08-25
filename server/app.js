@@ -54,7 +54,7 @@ app.use('/api/growth', trackBRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'Server is running', database: 'SQLite' });
+  res.json({ status: 'Server is running', database: 'PostgreSQL' });
 });
 
 // ML Proxy — forwards all /api/ml/* requests to the Python ML service

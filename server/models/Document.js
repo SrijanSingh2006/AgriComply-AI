@@ -5,7 +5,7 @@ class Document {
   static async create(data) {
     // REMOVED 'type' and 'size' from INSERT
     // We only insert columns we know exist: user_id, file_path, tag
-    const sql = `INSERT INTO documents (user_id, file_path, tag) VALUES (?, ?, ?)`;
+    const sql = `INSERT INTO documents (user_id, file_path, tag) VALUES (?, ?, ?) RETURNING id`;
     const [result] = await db.execute(sql, [
       data.user_id, 
       data.filename, // mapped to file_path

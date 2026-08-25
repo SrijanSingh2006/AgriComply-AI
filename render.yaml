@@ -1,6 +1,6 @@
 services:
   # ==========================================
-  # Python ML Service (Flask + Gunicorn)
+  # Python ML Service (Flask + Gunicorn) — Slim build ~80MB
   # ==========================================
   - type: web
     name: agricomply-ml
@@ -8,7 +8,7 @@ services:
     rootDir: ml_service
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 1 --preload
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers 1 --threads 2 --preload
     envVars:
       - key: GOOGLE_API_KEY
         sync: false
@@ -18,7 +18,7 @@ services:
         value: 3.12.0
 
   # ==========================================
-  # Node.js Backend (Express)
+  # Node.js Backend (Express) + PostgreSQL
   # ==========================================
   - type: web
     name: agricomply-server
@@ -34,3 +34,16 @@ services:
         value: https://agricomply-ml.onrender.com
       - key: PORT
         value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agricomply-db
+          property: connectionString
+
+# ==========================================
+# PostgreSQL Database (Free Tier)
+# ==========================================
+databases:
+  - name: agricomply-db
+    plan: free
+    databaseName: agricomply
+    user: agricomply_user

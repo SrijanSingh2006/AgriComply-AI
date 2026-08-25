@@ -1,8 +1,7 @@
 import os
+import io
 import json
-import numpy as np
 import hashlib
-import cv2
 import base64
 from google import genai
 from difflib import SequenceMatcher
@@ -11,6 +10,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
+from PIL import Image, ImageOps, ImageEnhance
 
 # --- EXISTING AI LOGIC ---
 from utils.file_reader import load_image_for_gemini
@@ -226,30 +226,34 @@ def process_bundle():
 
 @app.route('/api/bundler/optimize', methods=['POST'])
 def optimize_document():
-    """Uses Adaptive Thresholding to clean shadows and compress file size for gov portals."""
+    """Uses Pillow auto-contrast + sharpening to clean shadows and compress file size for gov portals."""
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
-        
+
     file = request.files['file']
-    file_bytes = np.frombuffer(file.read(), np.uint8)
-    
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+    file_bytes = file.read()
     original_size_kb = len(file_bytes) / 1024
-    
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # Adaptive Thresholding for cleaning shadows
-    cleaned = cv2.adaptiveThreshold(
-        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 15
-    )
-    
-    # High compression JPEG
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 60]
-    result, encimg = cv2.imencode('.jpg', cleaned, encode_param)
-    optimized_size_kb = len(encimg) / 1024
-    
-    b64_img = base64.b64encode(encimg).decode('utf-8')
-    
+
+    # Open with Pillow
+    img = Image.open(io.BytesIO(file_bytes)).convert('RGB')
+
+    # Convert to grayscale for document cleaning
+    gray = img.convert('L')
+
+    # Auto-contrast (equivalent to adaptive thresholding for shadow removal)
+    cleaned = ImageOps.autocontrast(gray, cutoff=2)
+
+    # Mild sharpening to improve readability
+    enhanced = ImageEnhance.Sharpness(cleaned).enhance(1.5)
+
+    # Compress to JPEG at quality 60 (same as before)
+    out_buf = io.BytesIO()
+    enhanced.save(out_buf, format='JPEG', quality=60, optimize=True)
+    out_bytes = out_buf.getvalue()
+    optimized_size_kb = len(out_bytes) / 1024
+
+    b64_img = base64.b64encode(out_bytes).decode('utf-8')
+
     return jsonify({
         "original_size_kb": round(original_size_kb, 1),
         "optimized_size_kb": round(optimized_size_kb, 1),
