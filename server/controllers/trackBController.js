@@ -1,8 +1,8 @@
 const Document = require('../models/Document');
 const axios = require('axios');
 
-// Configure Python URL
-const PYTHON_SERVICE_URL = process.env.PYTHON_URL || 'http://localhost:5001';
+// Use ML_URL (set by Render) or PYTHON_URL (legacy) or localhost for local dev
+const PYTHON_SERVICE_URL = process.env.ML_URL || process.env.PYTHON_URL || 'http://localhost:5001';
 
 exports.getEligibleSchemes = async (req, res) => {
   try {

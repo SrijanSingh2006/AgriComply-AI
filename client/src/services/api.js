@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-// Dynamically grab the Vercel cloud URL, or fallback to localhost for local testing
-const API_BASE_URL = 'https://server-eta-rosy-45.vercel.app';
+// Read from .env / .env.production — set VITE_API_URL to your deployed server URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Create the axios instance
 const api = axios.create({
   baseURL: `${API_BASE_URL}/api`,
   headers: {
-    'Content-Type': 'application/json', 'Bypass-Tunnel-Reminder': 'true',
-    'Bypass-Tunnel-Reminder': 'true'
+    'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
   }
 });
 

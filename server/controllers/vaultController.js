@@ -53,7 +53,7 @@ exports.deleteDocument = async (req, res) => {
 
         if (fileName) {
             // Delete actual file from 'uploads' folder
-            const filePath = path.join(__dirname, '../../uploads', fileName);
+            const filePath = path.join(__dirname, '../uploads', fileName);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
@@ -87,7 +87,7 @@ exports.replaceDocument = async (req, res) => {
 
         if (oldFileName) {
             // Delete old file from disk
-            const oldPath = path.join(__dirname, '../../uploads', oldFileName);
+            const oldPath = path.join(__dirname, '../uploads', oldFileName);
             if (fs.existsSync(oldPath)) {
                 fs.unlinkSync(oldPath);
             }
