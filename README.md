@@ -7,15 +7,18 @@ AgriComply AI is an intelligent, unified platform designed to help farmers and a
 ### 1. 📂 Secure Document Vault
 - Centralized storage for all agricultural documents (Aadhaar, PAN, Land Records, Bank Statements).
 - Automated document classification using AI.
+![Document Vault UI](docs/screenshots/vault.jpg)
 
 ### 2. ⚖️ AI Legal Compliance Dashboard
 - Analyzes uploaded documents against regional agricultural compliance laws.
 - Identifies missing documentation for compliance and estimates potential penalties.
 - Intelligent cross-document consistency checks to ensure data matches across all records.
+![Compliance Dashboard UI](docs/screenshots/compliance.jpg)
 
 ### 3. 📈 Alternative Credit Scoring
 - Calculates an alternative credit score for marginalized farmers who lack traditional credit histories.
 - Uses proxy data (land size, crop yield estimates, informal transaction records) to generate a reliable financial trust score for micro-lending.
+![Credit Score Dashboard UI](docs/screenshots/dashboard.jpg)
 
 ### 4. 🏛️ Government Scheme Discovery
 - Matches a farmer's unique profile against a database of active government subsidies and schemes.
@@ -24,6 +27,7 @@ AgriComply AI is an intelligent, unified platform designed to help farmers and a
 ### 5. 💬 Legal RAG Chatbot
 - Ask complex agricultural law questions in natural language.
 - Powered by a custom Retrieval-Augmented Generation (RAG) engine over legal texts.
+![AI Chatbot UI](docs/screenshots/chatbot.jpg)
 
 ### 6. 🕵️ ELA Forgery Detection
 - Secures the platform against document fraud using Error Level Analysis (ELA).
