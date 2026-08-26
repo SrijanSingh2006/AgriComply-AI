@@ -15,10 +15,9 @@ class GeminiAdapter:
         self.client = genai.Client(api_key=api_key)
         
         self.candidate_models = [
-            "gemini-2.5-flash",
             "gemini-flash-latest",
-            "gemini-2.5-pro",
-            "gemini-pro-latest"
+            "gemini-3-flash-preview",
+            "gemini-3.1-flash-lite"
         ]
 
     def _extract_retry_delay(self, error_str):
