@@ -89,7 +89,7 @@ def debug():
     if client:
         try:
             resp = client.models.generate_content(
-                model='gemini-flash-latest',
+                model='gemini-3-flash-preview',
                 contents="Say OK"
             )
             ai_test = "SUCCESS: " + (resp.text or "")[:50]
@@ -195,7 +195,7 @@ def process_bundle():
             
             # Use new SDK client
             response = client.models.generate_content(
-                model='gemini-flash-latest',
+                model='gemini-3-flash-preview',
                 contents=[prompt, gemini_file]
             )
             

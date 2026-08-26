@@ -21,7 +21,7 @@ if api_key:
     client = genai.Client(api_key=api_key)
 
 EMBEDDING_MODEL = 'gemini-embedding-001'
-CHAT_MODEL_NAME = 'gemini-flash-latest'
+CHAT_MODEL_NAME = 'gemini-3-flash-preview'
 
 # In-memory vector store (numpy arrays, no FAISS needed)
 _vectors = None        # shape: (N, D) float32

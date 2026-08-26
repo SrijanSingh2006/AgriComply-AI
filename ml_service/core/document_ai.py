@@ -10,7 +10,7 @@ client = None
 if api_key:
     client = genai.Client(api_key=api_key)
 
-CHAT_MODEL = 'gemini-flash-latest'
+CHAT_MODEL = 'gemini-3-flash-preview'
 
 def clean_json_response(text):
     """Helper to strip markdown formatting from Gemini's JSON response"""
