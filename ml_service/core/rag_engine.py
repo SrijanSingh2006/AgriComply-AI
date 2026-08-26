@@ -165,9 +165,9 @@ def query_rag_bot(user_question: str) -> str:
                 return "Safety filter blocked response."
 
         except Exception as e:
-            print(f"\n❌ Direct Query Error: {type(e).__name__}")
+            print(f"\n❌ Direct Query Error: {type(e).__name__} - {str(e)}")
             traceback.print_exc()
-            return f"Chat Error: {type(e).__name__}"
+            return f"Chat Error: {type(e).__name__} - {str(e)}"
 
     # Documents ingested — do RAG
     try:
@@ -202,6 +202,6 @@ def query_rag_bot(user_question: str) -> str:
             return "Safety filter blocked response."
 
     except Exception as e:
-        print(f"\n❌ Query Error Type: {type(e).__name__}")
+        print(f"\n❌ Query Error Type: {type(e).__name__} - {str(e)}")
         traceback.print_exc()
-        return f"Chat Error: {type(e).__name__}"
+        return f"Chat Error: {type(e).__name__} - {str(e)}"
