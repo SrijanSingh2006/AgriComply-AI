@@ -14,12 +14,10 @@ class GeminiAdapter:
             
         self.client = genai.Client(api_key=api_key)
         
-        # VALID MODELS (Taken directly from your diagnostic list)
         self.candidate_models = [
-            "gemini-2.5-flash",       # PRIMARY: The newest stable Flash model
-            "gemini-2.0-flash",       # BACKUP: The previous stable Flash model
-            "gemini-flash-latest",    # ALIAS: Points to Google's current recommendation
-            "gemini-2.5-pro"          # FALLBACK: Slower but more intelligent
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-1.0-pro"
         ]
 
     def _extract_retry_delay(self, error_str):
