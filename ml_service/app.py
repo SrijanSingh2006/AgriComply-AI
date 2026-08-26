@@ -78,6 +78,32 @@ def health_check():
         ]
     })
 
+@app.route('/debug', methods=['GET'])
+def debug():
+    """Debug endpoint to check env and API key validity."""
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    key_present = bool(api_key)
+    key_prefix = api_key[:8] + "..." if api_key else "NOT SET"
+    
+    ai_test = "not tested"
+    if client:
+        try:
+            resp = client.models.generate_content(
+                model='gemini-2.5-flash',
+                contents="Say OK"
+            )
+            ai_test = "SUCCESS: " + (resp.text or "")[:50]
+        except Exception as e:
+            ai_test = f"FAILED: {type(e).__name__}: {str(e)[:200]}"
+    else:
+        ai_test = "client is None - API key missing"
+
+    return jsonify({
+        "api_key_present": key_present,
+        "api_key_prefix": key_prefix,
+        "ai_test": ai_test
+    })
+
 # ==========================================
 # 🛡️ ADVANCED CYBERSECURITY ROUTES
 # ==========================================
