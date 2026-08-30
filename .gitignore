@@ -27,6 +27,8 @@ server/uploads/*
 !server/uploads/.gitkeep
 ml_service/uploads/*
 !ml_service/uploads/.gitkeep
+uploads/*
+!uploads/.gitkeep
 
 # Testing & Coverage
 .coverage
