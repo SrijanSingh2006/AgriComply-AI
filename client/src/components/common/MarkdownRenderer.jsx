@@ -112,7 +112,21 @@ export default function MarkdownRenderer({ content, className = '' }) {
       continue;
     }
 
-    // 3. Headings (###, ##, #)
+    // 3. Headings (####, ###, ##, #)
+    if (trimmed.startsWith('#### ')) {
+      const headingText = trimmed.replace(/^####\s+/, '');
+      elements.push(
+        <div key={`h4-${lineIdx}`} className="mt-3.5 mb-1.5 flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-teal-500"></div>
+          <h5 className="text-sm font-extrabold text-slate-800 tracking-tight">
+            {parseInline(headingText)}
+          </h5>
+        </div>
+      );
+      lineIdx++;
+      continue;
+    }
+
     if (trimmed.startsWith('### ')) {
       const headingText = trimmed.replace(/^###\s+/, '');
       elements.push(
