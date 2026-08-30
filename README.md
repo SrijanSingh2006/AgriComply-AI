@@ -170,14 +170,21 @@ graph TD
 
 ## ⚡ Quick Start (1-Click Run)
 
-### 🖱️ Option 1: 1-Click Launch (Windows)
+### 🖱️ Windows (1-Click Launch)
 1. Open this project folder in File Explorer.
-2. **Double-click** on [`start-local.bat`](start-local.bat) (or [`start-demo.bat`](start-demo.bat)).
-3. All 3 services will launch in separate windows and open **`http://localhost:3000`** in your default browser.
+2. **Double-click** on **[`RUN_PROJECT.bat`](RUN_PROJECT.bat)**.
+3. All 3 services launch in parallel and automatically open **`http://localhost:3000`** in your browser in 2 seconds.
+4. When finished, double-click **[`STOP_PROJECT.bat`](STOP_PROJECT.bat)** to cleanly shut down all services.
 
-### 💻 Option 2: Run via Terminal
+### 💻 Command Line (Windows)
 ```powershell
-.\start-local.bat
+.\RUN_PROJECT.bat
+```
+
+### 🍎 macOS / Linux
+```bash
+chmod +x start-local.sh
+./start-local.sh
 ```
 
 ---

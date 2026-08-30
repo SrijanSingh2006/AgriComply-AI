@@ -4,17 +4,18 @@
 
 ## ⚡ Quick Start (The Easiest Way to Run)
 
-### 🖱️ Option 1: 1-Click Launch (Recommended)
-1. Open this project folder in File Explorer:
+### 🖱️ 1-Click Desktop & Folder Launch (Windows)
+1. Open this project folder:
    ```
    c:\Users\srijan\Desktop\AgriComply-AI-main
    ```
-2. **Double-click** on [`start-local.bat`](start-local.bat) (or [`start-demo.bat`](start-demo.bat)).
-3. The launcher will automatically start all 3 services in separate windows and open the website in your browser!
+2. **Double-click** on **[`RUN_PROJECT.bat`](RUN_PROJECT.bat)** *(or the Desktop shortcut `RUN_PROJECT`)*.
+3. All 3 services will start in parallel and the website opens in your browser at **`http://localhost:3000`** in 2 seconds!
+4. To stop everything when done, double-click **[`STOP_PROJECT.bat`](STOP_PROJECT.bat)** *(or the Desktop shortcut `STOP_PROJECT`)*.
 
-### 💻 Option 2: Run from Terminal (PowerShell / CMD)
+### 💻 Run via Terminal (PowerShell / CMD)
 ```powershell
-.\start-local.bat
+.\RUN_PROJECT.bat
 ```
 
 ---
