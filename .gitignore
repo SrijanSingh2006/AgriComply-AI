@@ -72,3 +72,8 @@ Thumbs.db
 # JetBrains (PyCharm/WebStorm)
 .idea/
 *.iml
+
+# Private Local Guides (Not for GitHub)
+INTERVIEW_MASTER_GUIDE.md
+PROJECT_EXPLANATION_AND_INTERVIEW_QUESTIONS.md
+*INTERVIEW*.md
