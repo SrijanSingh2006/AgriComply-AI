@@ -1,0 +1,47 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1080 >>
+stream
+BT /F1 16 Tf 50 750 Td (STATE BANK OF INDIA - AGRICULTURAL TRANSACTION STATEMENT) Tj ET
+BT /F1 11 Tf
+50 710 Td (Account Type: Kisan Credit Card \(KCC\) & Savings Multi-Option Account) Tj 0 -18 Td
+50 692 Td (Account Number: 30987654321) Tj 0 -18 Td
+50 674 Td (Account Holder: John Farmer) Tj 0 -18 Td
+50 656 Td (Branch: SBI Agri-Commercial Branch, Dindori \(IFSC: SBIN0001234\)) Tj 0 -18 Td
+50 638 Td (Statement Period: 01-April-2025 to 31-March-2026) Tj 0 -18 Td
+50 620 Td (--------------------------------------------------------------------------------) Tj 0 -18 Td
+50 602 Td (Summary:) Tj 0 -18 Td
+50 584 Td (Total Annual Agricultural Inflow: Rs. 5,40,000.00) Tj 0 -18 Td
+50 566 Td (Total Debits / Operational Outflow: Rs. 2,10,000.00) Tj 0 -18 Td
+50 548 Td (Current Available Balance: Rs. 3,30,000.00) Tj 0 -18 Td
+50 530 Td (Existing Crop Loan Repayments: 100% On-Time \(Zero Default History\)) Tj 0 -18 Td
+50 512 Td (--------------------------------------------------------------------------------) Tj 0 -18 Td
+50 494 Td (Verified by SBI Core Banking System.) Tj 0 -18 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+0000000300 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+390
+%%EOF

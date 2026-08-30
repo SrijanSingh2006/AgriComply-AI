@@ -1,0 +1,45 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 829 >>
+stream
+BT /F1 16 Tf 50 750 Td (INCOME TAX DEPARTMENT - GOVERNMENT OF INDIA (PAN)) Tj ET
+BT /F1 11 Tf
+50 710 Td (Permanent Account Number Card) Tj 0 -18 Td
+50 692 Td (--------------------------------------------------------------------------------) Tj 0 -18 Td
+50 674 Td (PAN Number: ABCPF1234K) Tj 0 -18 Td
+50 656 Td (Cardholder Name: John Farmer) Tj 0 -18 Td
+50 638 Td (Father's Name: Ram Farmer) Tj 0 -18 Td
+50 620 Td (Date of Birth: 15/08/1984) Tj 0 -18 Td
+50 602 Td (Tax Status: Individual Agricultural Producer) Tj 0 -18 Td
+50 584 Td (Category: Resident Individual) Tj 0 -18 Td
+50 566 Td (Aadhaar Seeding: LINKED & VERIFIED) Tj 0 -18 Td
+50 548 Td (--------------------------------------------------------------------------------) Tj 0 -18 Td
+50 530 Td (Issued by the Directorate of Income Tax, Government of India.) Tj 0 -18 Td
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+0000000300 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+390
+%%EOF
