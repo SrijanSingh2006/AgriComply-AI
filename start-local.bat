@@ -66,30 +66,19 @@ if not exist "client\node_modules\" (
     cd client && call %NPM_CMD% install && cd ..
 )
 
-REM 5. Start Python ML Microservice (Port 5001)
-echo.
+REM 5. Start All 3 Services in Parallel (Instant Launch)
 echo [1/3] Starting Python ML Microservice (Port 5001)...
 start "AgriComply ML Service (Port 5001)" cmd /k "cd /d %~dp0ml_service && %PYTHON_CMD% app.py"
 
-echo Waiting 3 seconds for ML engine to start...
-timeout /t 3 /nobreak > nul
-
-REM 6. Start Node.js API Server (Port 5000)
-echo.
 echo [2/3] Starting Node.js Backend API (Port 5000)...
 start "AgriComply Node Server (Port 5000)" cmd /k "cd /d %~dp0server && %NODE_CMD% app.js"
 
-echo Waiting 2 seconds for Node server to start...
-timeout /t 2 /nobreak > nul
-
-REM 7. Start React Vite Frontend (Port 3000)
-echo.
 echo [3/3] Starting React Vite Frontend (Port 3000)...
 start "AgriComply Client UI (Port 3000)" cmd /k "cd /d %~dp0client && %NPM_CMD% run dev"
 
 echo.
 echo ========================================================
-echo  All 3 Services Are Running!
+echo  🚀 All 3 Services Launched in Parallel!
 echo  -------------------------------------------------------
 echo  - Frontend Web UI:  http://localhost:3000
 echo  - Backend API:      http://localhost:5000
@@ -100,6 +89,6 @@ echo Opening browser to http://localhost:3000...
 start http://localhost:3000
 
 echo.
-echo (Keep the 3 opened terminal windows running)
+echo (Keep the 3 service windows open during your demo)
 echo Press any key to close this launcher.
 pause > nul
