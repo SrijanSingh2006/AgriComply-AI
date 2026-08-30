@@ -1,60 +1,44 @@
 /**
- * PostgreSQL database adapter.
- * 
- * Drop-in replacement for the SQLite config/db.js.
- * Automatically converts SQLite-style ? placeholders to PostgreSQL $1, $2, ...
- * so all existing models (User.js, Document.js, Rules.js) work unchanged.
- * 
- * Requires: DATABASE_URL environment variable (Render PostgreSQL connection string)
+ * SQLite database adapter using better-sqlite3.
+ *
+ * Provides the same execute() interface previously used by the PostgreSQL adapter,
+ * so all models (User.js, Document.js, Rules.js) work without any changes.
+ * Uses the local agricomply.db file.
  */
-const { Pool } = require('pg');
+const Database = require('better-sqlite3');
+const path = require('path');
 
-// Render provides DATABASE_URL automatically when you attach a PostgreSQL database
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com')
-    ? { rejectUnauthorized: false }
-    : false,
-});
+const dbPath = path.join(__dirname, '..', 'agricomply.db');
+const sqlite = new Database(dbPath);
 
-/**
- * Convert SQLite-style ? positional params to PostgreSQL $1, $2, ...
- * Also converts SQLite-specific syntax to PostgreSQL equivalents.
- */
-function toPostgres(sql) {
-  let i = 0;
-  // Replace ? with $1, $2, ...
-  sql = sql.replace(/\?/g, () => `$${++i}`);
-  // SQLite AUTOINCREMENT → PostgreSQL SERIAL (for schema creation only)
-  sql = sql.replace(/INTEGER PRIMARY KEY AUTOINCREMENT/gi, 'SERIAL PRIMARY KEY');
-  // SQLite datetime('now') → PostgreSQL NOW()
-  sql = sql.replace(/datetime\('now'\)/gi, 'NOW()');
-  // SQLite DATETIME DEFAULT CURRENT_TIMESTAMP → PostgreSQL TIMESTAMP DEFAULT NOW()
-  sql = sql.replace(/DATETIME DEFAULT CURRENT_TIMESTAMP/gi, 'TIMESTAMP DEFAULT NOW()');
-  sql = sql.replace(/DATETIME DEFAULT NOW\(\)/gi, 'TIMESTAMP DEFAULT NOW()');
-  return sql;
-}
+// Enable WAL mode for better concurrent read performance
+sqlite.pragma('journal_mode = WAL');
 
 const db = {
   /**
    * Execute a SQL query.
    * Returns [rows] for SELECT, [{ insertId, affectedRows }] for others.
-   * Compatible with the MySQL2-style interface used by all models.
+   * Compatible with the interface used by all models.
+   * Supports ? positional params natively (SQLite style).
    */
   execute: async (sql, params = []) => {
-    const pgSql = toPostgres(sql);
     try {
-      const result = await pool.query(pgSql, params);
       const trimmed = sql.trim().toUpperCase();
 
       if (trimmed.startsWith('SELECT')) {
-        return [result.rows];
+        const stmt = sqlite.prepare(sql);
+        const rows = stmt.all(...params);
+        return [rows];
       } else if (trimmed.startsWith('INSERT')) {
-        // Return insertId (the new row's id if RETURNING is used, else 0)
-        const insertId = result.rows && result.rows[0] ? result.rows[0].id : 0;
-        return [{ insertId, affectedRows: result.rowCount }];
+        // Strip RETURNING clause — not supported in older SQLite builds
+        const cleanSql = sql.replace(/\s+RETURNING\s+\w+/i, '');
+        const stmt = sqlite.prepare(cleanSql);
+        const info = stmt.run(...params);
+        return [{ insertId: info.lastInsertRowid, affectedRows: info.changes }];
       } else {
-        return [{ insertId: 0, affectedRows: result.rowCount }];
+        const stmt = sqlite.prepare(sql);
+        const info = stmt.run(...params);
+        return [{ insertId: 0, affectedRows: info.changes }];
       }
     } catch (err) {
       console.error('DB Error:', err.message, '| SQL:', sql);
@@ -62,8 +46,8 @@ const db = {
     }
   },
 
-  // Expose pool for raw queries if needed
-  raw: pool,
+  // Expose raw sqlite instance for advanced usage
+  raw: sqlite,
 };
 
 module.exports = db;

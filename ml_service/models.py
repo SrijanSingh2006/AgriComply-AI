@@ -1,21 +1,15 @@
 import os
 from datetime import datetime
-from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-
-# Initialize a dummy Flask app purely to generate the DB context
-app = Flask(__name__)
 
 # ==========================================
 # ZERO-DEPLOYMENT: LOCAL SQLITE DATABASE
 # ==========================================
-basedir = os.path.abspath(os.path.dirname(__file__))
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'agricomply.db')
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Initialize SQLAlchemy
-db = SQLAlchemy(app)
+# Initialize SQLAlchemy WITHOUT a bound app so that app.py can call
+# db.init_app(app) without conflicts (application factory pattern)
+db = SQLAlchemy()
 
 # ==========================================
 # DATABASE SCHEMA (TABLES)
@@ -54,9 +48,16 @@ class Document(db.Model):
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # ==========================================
-# RUN THIS FILE TO BUILD THE TABLES
+# RUN THIS FILE DIRECTLY TO BUILD THE TABLES
 # ==========================================
 if __name__ == '__main__':
-    with app.app_context():
+    import os
+    from flask import Flask
+    _app = Flask(__name__)
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    _app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'agricomply.db')
+    _app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    db.init_app(_app)
+    with _app.app_context():
         db.create_all()
         print("✅ SUCCESS: Local SQLite database (agricomply.db) created successfully!")

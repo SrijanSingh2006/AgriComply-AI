@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api'; 
 import axios from 'axios';
 import { useVault } from '../contexts/VaultContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Calculator, ArrowLeft, Landmark, FileText, ChevronRight, Zap, Lightbulb, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const LoanCalculator = () => {
     const navigate = useNavigate();
@@ -42,16 +44,13 @@ const LoanCalculator = () => {
         loadDocs();
     }, [contextDocs]);
 
-    // 3. Helper to extract tags AND actual OCR Data (CRITICAL FIX)
+    // 3. Helper to extract tags AND actual OCR Data
     const mapDocs = (docs) => {
         return (docs || []).map(d => {
-            // Check where your backend stores the OCR JSON. Often it's in 'extracted_data' or 'content'
             const rawData = d.extracted_data || d.parsed_text || d.content || "Data not available";
-            
             return {
                 tag: d.tag || d.type || d.classification?.type || "Unknown",
                 filename: d.filename,
-                // Stringify the JSON so it travels safely over HTTP to Python
                 extracted_data: typeof rawData === 'object' ? JSON.stringify(rawData) : rawData
             };
         });
@@ -80,7 +79,7 @@ const LoanCalculator = () => {
         } catch (error) {
             console.error("AI Error:", error);
             if (error.code === "ERR_NETWORK") {
-                alert("Please ensure 'python app.py' is running on Port 5001.");
+                alert("Please ensure the ML service is running.");
             } else {
                 alert("AI Analysis Failed. See console.");
             }
@@ -90,88 +89,124 @@ const LoanCalculator = () => {
     };
 
     return (
-        <div className="p-10 max-w-5xl mx-auto pb-20">
+        <motion.div 
+            className="p-4 md:p-8 max-w-6xl mx-auto pb-20"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+        >
             <button 
                 onClick={() => navigate('/growth')} 
-                className="mb-6 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 font-medium"
+                className="mb-8 inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-bold transition-colors shadow-sm"
             >
-                ← Back to Schemes
+                <ArrowLeft size={16} /> Back to Growth Hub
             </button>
 
-            <div className="flex justify-between items-end mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2">Universal Eligibility Check</h1>
-                    <p className="text-gray-600">
-                        {schemeData ? `Checking for: ${schemeData.name}` : 'Check eligibility across all Banks & NBFCs'}
-                    </p>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="bg-indigo-600 p-4 rounded-2xl shadow-lg shadow-indigo-600/20 text-white">
+                        <Calculator size={32} strokeWidth={2} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-br from-slate-800 to-slate-600 tracking-tight">
+                            AI Eligibility Engine
+                        </h1>
+                        <p className="text-slate-500 font-medium mt-1">
+                            {schemeData ? `Analyzing eligibility for: ${schemeData.name}` : 'Check approval odds across all Banks & NBFCs'}
+                        </p>
+                    </div>
                 </div>
                 
-                <div className={`px-4 py-2 rounded-lg border ${foundDocs.length > 0 ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-                    <span className="font-bold text-lg">{foundDocs.length}</span> Documents Found
+                <div className={`px-5 py-3 rounded-2xl border shadow-sm flex items-center gap-3 ${foundDocs.length > 0 ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                    <FileText size={20} />
+                    <div>
+                        <div className="font-extrabold text-xl leading-none">{foundDocs.length}</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">Vault Docs</div>
+                    </div>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left: Form */}
-                <div className="lg:col-span-2 space-y-8">
-                    <div className="bg-white p-6 shadow-sm rounded-xl border border-gray-200">
-                        <div className="mb-4">
-                            <label className="block font-bold mb-2 text-gray-700">Loan Amount (₹)</label>
-                            <input 
-                                type="number" 
-                                name="amount"
-                                value={formData.amount}
-                                onChange={handleChange}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-lg"
-                                placeholder="e.g. 500000"
-                            />
-                        </div>
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="bg-white p-8 shadow-xl shadow-slate-200/50 rounded-3xl border border-slate-100 relative overflow-hidden">
+                        
+                        <div className="space-y-8 relative z-10">
+                            <div>
+                                <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3">Loan Amount (₹)</label>
+                                <input 
+                                    type="number" 
+                                    name="amount"
+                                    value={formData.amount}
+                                    onChange={handleChange}
+                                    className="w-full p-4 border border-slate-300 rounded-2xl bg-slate-50 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none text-xl font-bold text-slate-700 transition-all shadow-inner"
+                                    placeholder="e.g. 500000"
+                                />
+                            </div>
 
-                        <div className="mb-4">
-                            <label className="block font-bold mb-2 text-gray-700">Tenure: {formData.tenure} Years</label>
-                            <input 
-                                type="range" 
-                                name="tenure"
-                                min="1" max="20"
-                                value={formData.tenure}
-                                onChange={handleChange}
-                                className="w-full accent-blue-600 h-2 bg-gray-200 rounded-lg appearance-none"
-                            />
-                        </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-4">
+                                    <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-widest">Tenure</label>
+                                    <span className="bg-indigo-100 text-indigo-700 font-black px-3 py-1 rounded-lg shadow-sm">
+                                        {formData.tenure} Years
+                                    </span>
+                                </div>
+                                <input 
+                                    type="range" 
+                                    name="tenure"
+                                    min="1" max="20"
+                                    value={formData.tenure}
+                                    onChange={handleChange}
+                                    className="w-full h-3 bg-slate-200 rounded-full appearance-none cursor-pointer accent-indigo-600 shadow-inner"
+                                />
+                                <div className="flex justify-between text-[10px] font-bold text-slate-400 mt-2">
+                                    <span>1 Yr</span>
+                                    <span>20 Yrs</span>
+                                </div>
+                            </div>
 
-                        <div className="mb-6">
-                            <label className="block font-bold mb-2 text-gray-700">Preferred Lender</label>
-                            <input 
-                                list="banks" 
-                                name="bank"
-                                value={formData.bank}
-                                onChange={handleChange}
-                                placeholder="Type 'Any' or specific bank..."
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            />
-                            <datalist id="banks">
-                                <option value="Any Bank or NBFC" />
-                                <option value="State Bank of India (SBI)" />
-                                <option value="HDFC Bank" />
-                                <option value="Punjab National Bank" />
-                            </datalist>
-                        </div>
+                            <div>
+                                <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                    <Landmark size={14} /> Preferred Lender
+                                </label>
+                                <input 
+                                    list="banks" 
+                                    name="bank"
+                                    value={formData.bank}
+                                    onChange={handleChange}
+                                    placeholder="Type 'Any' or specific bank..."
+                                    className="w-full p-4 border border-slate-300 rounded-2xl bg-slate-50 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none font-medium text-slate-700 transition-all shadow-inner"
+                                />
+                                <datalist id="banks">
+                                    <option value="Any Bank or NBFC" />
+                                    <option value="State Bank of India (SBI)" />
+                                    <option value="HDFC Bank" />
+                                    <option value="Punjab National Bank" />
+                                </datalist>
+                            </div>
 
-                        <button 
-                            onClick={handleCheck}
-                            disabled={loading}
-                            className="w-full bg-black text-white font-bold py-4 rounded-xl hover:bg-gray-800 disabled:bg-gray-400 transition-all shadow-lg"
-                        >
-                            {loading ? "AI is Analyzing..." : "Check Eligibility Now"}
-                        </button>
+                            <button 
+                                onClick={handleCheck}
+                                disabled={loading}
+                                className="w-full bg-indigo-600 text-white font-extrabold py-5 rounded-2xl hover:bg-indigo-700 disabled:bg-slate-300 disabled:text-slate-500 transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-indigo-500/30 active:scale-[0.98] flex items-center justify-center gap-2 text-lg"
+                            >
+                                {loading ? (
+                                    <><motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}><Zap size={22} className="text-amber-300"/></motion.div> AI is Analyzing...</>
+                                ) : (
+                                    <>Analyze Eligibility <ChevronRight size={22} /></>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
                     {foundDocs.length > 0 && (
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm">
-                            <p className="font-bold text-gray-500 mb-2 uppercase text-xs tracking-wider">Vault Inventory (Sending to AI)</p>
+                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 shadow-inner">
+                            <p className="font-extrabold text-slate-400 mb-3 uppercase text-[10px] tracking-widest flex items-center gap-2">
+                                <FileText size={12}/> Vault Inventory Context
+                            </p>
                             <div className="flex flex-wrap gap-2">
                                 {foundDocs.map((d, i) => (
-                                    <span key={i} className="bg-white border border-gray-300 px-2 py-1 rounded text-gray-700 font-mono">
+                                    <span key={i} className="bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 font-mono text-xs font-bold shadow-sm">
                                         {d.tag}
                                     </span>
                                 ))}
@@ -181,49 +216,79 @@ const LoanCalculator = () => {
                 </div>
 
                 {/* Right: Results */}
-                <div className="lg:col-span-1">
-                    <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-full min-h-[300px] flex flex-col">
-                        {!result && !loading && (
-                            <div className="flex-1 flex flex-col items-center justify-center text-gray-400 text-center space-y-4 opacity-60">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-3xl">🔍</div>
-                                <p>Enter details to start<br/>AI Analysis</p>
-                            </div>
-                        )}
-
-                        {loading && (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center">
-                                <div className="animate-spin h-10 w-10 border-4 border-blue-600 border-t-transparent rounded-full mb-4"></div>
-                                <p className="font-bold text-blue-600">Checking {foundDocs.length} Documents...</p>
-                            </div>
-                        )}
-
-                        {result && (
-                            <div className="animate-fade-in">
-                                <div className={`p-4 rounded-lg mb-4 text-center ${result.eligible ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
-                                    <h2 className="text-xl font-bold">
-                                        {result.eligible ? 'High Chance' : 'Not Eligible'}
-                                    </h2>
-                                    <p className="text-xs font-bold mt-1 opacity-80">{result.confidence_score}% Confidence</p>
-                                </div>
-                                
-                                <div className="space-y-4">
-                                    <div>
-                                        <h3 className="font-bold text-gray-800 text-sm mb-1">Reasoning:</h3>
-                                        <p className="text-gray-600 text-sm leading-relaxed">{result.reasoning}</p>
+                <div className="lg:col-span-5">
+                    <div className="bg-white p-8 rounded-3xl border border-slate-200/60 shadow-xl shadow-slate-200/50 h-full min-h-[400px] flex flex-col relative overflow-hidden">
+                        <AnimatePresence mode="wait">
+                            {!result && !loading && (
+                                <motion.div 
+                                    key="empty"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="flex-1 flex flex-col items-center justify-center text-slate-400 text-center space-y-4"
+                                >
+                                    <div className="w-20 h-20 bg-slate-50 border-2 border-dashed border-slate-200 rounded-full flex items-center justify-center text-slate-300">
+                                        <Zap size={32} />
                                     </div>
-                                    {result.suggestion && (
-                                        <div className="pt-4 border-t border-gray-100">
-                                            <h3 className="font-bold text-blue-800 text-sm mb-1">💡 Tip:</h3>
-                                            <p className="text-blue-600 text-sm">{result.suggestion}</p>
+                                    <p className="font-bold text-slate-500">Awaiting input for<br/>AI Analysis</p>
+                                </motion.div>
+                            )}
+
+                            {loading && (
+                                <motion.div 
+                                    key="loading"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="flex-1 flex flex-col items-center justify-center text-center space-y-6"
+                                >
+                                    <div className="relative">
+                                        <div className="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
+                                        <div className="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                                    </div>
+                                    <div>
+                                        <p className="font-extrabold text-indigo-600 text-lg">Evaluating Context...</p>
+                                        <p className="text-sm font-medium text-slate-500 mt-1">Checking {foundDocs.length} vault documents against bank policies.</p>
+                                    </div>
+                                </motion.div>
+                            )}
+
+                            {result && (
+                                <motion.div 
+                                    key="result"
+                                    initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+                                    className="flex-1 flex flex-col"
+                                >
+                                    <div className={`p-6 rounded-2xl mb-6 text-center border-2 shadow-sm ${result.eligible ? 'bg-emerald-50 text-emerald-800 border-emerald-200' : 'bg-rose-50 text-rose-800 border-rose-200'}`}>
+                                        <h2 className="text-2xl font-black uppercase tracking-tight">
+                                            {result.eligible ? 'High Chance' : 'Not Eligible'}
+                                        </h2>
+                                        <div className="inline-flex items-center gap-1.5 mt-2 bg-white/60 px-3 py-1 rounded-lg text-sm font-bold shadow-sm">
+                                            {result.eligible ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                                            {result.confidence_score}% AI Confidence
                                         </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
+                                    </div>
+                                    
+                                    <div className="space-y-6 flex-1">
+                                        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                            <h3 className="font-extrabold text-slate-700 text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                Reasoning
+                                            </h3>
+                                            <p className="text-slate-600 text-sm font-medium leading-relaxed">{result.reasoning}</p>
+                                        </div>
+                                        
+                                        {result.suggestion && (
+                                            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100">
+                                                <h3 className="font-extrabold text-indigo-800 text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                                                    <Lightbulb size={16} /> Actionable Tip
+                                                </h3>
+                                                <p className="text-indigo-700 text-sm font-medium leading-relaxed">{result.suggestion}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 };
 

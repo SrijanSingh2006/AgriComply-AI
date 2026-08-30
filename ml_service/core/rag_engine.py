@@ -21,7 +21,7 @@ if api_key:
     client = genai.Client(api_key=api_key)
 
 EMBEDDING_MODEL = 'gemini-embedding-001'
-CHAT_MODEL_NAME = 'gemini-3-flash-preview'
+CHAT_MODEL_NAME = 'gemini-2.5-flash'
 
 # In-memory vector store (numpy arrays, no FAISS needed)
 _vectors = None        # shape: (N, D) float32
@@ -136,15 +136,14 @@ def ingest_pdf_to_vector_db(file_path: str):
         raise ValueError(f"Embedding failed: {str(e)}")
 
 
+from .gemini_client import gemini
+
 def query_rag_bot(user_question: str) -> str:
     global _vectors, _chunks
 
     # No documents ingested — use Gemini directly as agricultural legal AI
     if _vectors is None or len(_chunks) == 0:
         try:
-            if not client:
-                return "Gemini API client is not initialized."
-
             prompt = f"""
             You are an expert Agricultural Legal Assistant specializing in Indian farming laws,
             government schemes (PM-KISAN, PMFBY, KCC, etc.), land records, compliance rules,
@@ -155,25 +154,17 @@ def query_rag_bot(user_question: str) -> str:
             QUESTION: {user_question}
             """
 
-            response = client.models.generate_content(
-                model=CHAT_MODEL_NAME,
-                contents=prompt
-            )
-            try:
-                return response.text
-            except ValueError:
-                return "Safety filter blocked response."
+            text = gemini.generate_content([prompt])
+            if text:
+                return text
+            return "AI service is currently busy. Please try again in a moment."
 
         except Exception as e:
-            print(f"\n❌ Direct Query Error: {type(e).__name__} - {str(e)}")
             traceback.print_exc()
             return f"Chat Error: {type(e).__name__} - {str(e)}"
 
     # Documents ingested — do RAG
     try:
-        if not client:
-            return "Gemini API client is not initialized."
-
         q_embeddings = embed_text_batch(user_question)
         q_vec = np.array(q_embeddings[0], dtype='float32')
 
@@ -192,16 +183,11 @@ def query_rag_bot(user_question: str) -> str:
         QUESTION: {user_question}
         """
 
-        response = client.models.generate_content(
-            model=CHAT_MODEL_NAME,
-            contents=prompt
-        )
-        try:
-            return response.text
-        except ValueError:
-            return "Safety filter blocked response."
+        text = gemini.generate_content([prompt])
+        if text:
+            return text
+        return "AI service is currently busy. Please try again in a moment."
 
     except Exception as e:
-        print(f"\n❌ Query Error Type: {type(e).__name__} - {str(e)}")
         traceback.print_exc()
         return f"Chat Error: {type(e).__name__} - {str(e)}"

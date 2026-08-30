@@ -1,44 +1,43 @@
 /**
- * PostgreSQL DB initializer — runs on every server start.
+ * SQLite DB initializer — runs on every server start.
  * Uses CREATE TABLE IF NOT EXISTS so it's safe to run multiple times.
- * Compatible with Render's PostgreSQL free tier.
+ * Uses the local agricomply.db file via better-sqlite3.
  */
 require('dotenv').config();
-const { Pool } = require('pg');
+const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
+const path = require('path');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('render.com')
-    ? { rejectUnauthorized: false }
-    : false,
-});
+const dbPath = path.join(__dirname, 'agricomply.db');
+const db = new Database(dbPath);
 
-async function initDb() {
-  const client = await pool.connect();
+// Enable WAL mode
+db.pragma('journal_mode = WAL');
+
+function initDb() {
   try {
     // Create tables
-    await client.query(`
+    db.exec(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
         role TEXT NOT NULL DEFAULT 'Farmer',
-        created_at TIMESTAMP DEFAULT NOW()
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS documents (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER REFERENCES users(id),
         file_name TEXT,
         file_path TEXT,
         tag TEXT,
-        upload_date TIMESTAMP DEFAULT NOW()
+        upload_date DATETIME DEFAULT CURRENT_TIMESTAMP
       );
 
       CREATE TABLE IF NOT EXISTS compliance_rules (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         rule_name TEXT,
         required_doc_tag TEXT,
         penalty_amount REAL,
@@ -47,7 +46,7 @@ async function initDb() {
       );
 
       CREATE TABLE IF NOT EXISTS schemes (
-        id SERIAL PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
         scheme_name TEXT,
         description TEXT,
         required_docs_json TEXT
@@ -55,8 +54,11 @@ async function initDb() {
     `);
 
     // Seed compliance rules if empty
-    const ruleCount = await client.query('SELECT COUNT(*) as count FROM compliance_rules');
-    if (parseInt(ruleCount.rows[0].count) === 0) {
+    const ruleCount = db.prepare('SELECT COUNT(*) as count FROM compliance_rules').get();
+    if (parseInt(ruleCount.count) === 0) {
+      const insertRule = db.prepare(
+        'INSERT OR IGNORE INTO compliance_rules (rule_name, required_doc_tag, applicable_role, due_date) VALUES (?, ?, ?, ?)'
+      );
       const rules = [
         ['KCC Renewal', 'LandRecord', 'Farmer', '2025-06-30'],
         ['PM-KISAN KYC', 'Aadhaar', 'Farmer', '2025-12-31'],
@@ -70,51 +72,45 @@ async function initDb() {
         ['Stock & Debtor Statement', 'StockStmt', 'MSME', '2025-01-10'],
         ['Udyam Registration', 'UdyamCert', 'MSME', '2025-03-31'],
       ];
-      for (const [rule_name, required_doc_tag, applicable_role, due_date] of rules) {
-        await client.query(
-          'INSERT INTO compliance_rules (rule_name, required_doc_tag, applicable_role, due_date) VALUES ($1, $2, $3, $4)',
-          [rule_name, required_doc_tag, applicable_role, due_date]
-        );
-      }
+      const insertMany = db.transaction((items) => {
+        for (const item of items) insertRule.run(...item);
+      });
+      insertMany(rules);
       console.log(`✅ Seeded ${rules.length} compliance rules`);
     }
 
     // Seed schemes if empty
-    const schemeCount = await client.query('SELECT COUNT(*) as count FROM schemes');
-    if (parseInt(schemeCount.rows[0].count) === 0) {
+    const schemeCount = db.prepare('SELECT COUNT(*) as count FROM schemes').get();
+    if (parseInt(schemeCount.count) === 0) {
+      const insertScheme = db.prepare(
+        'INSERT OR IGNORE INTO schemes (scheme_name, required_docs_json) VALUES (?, ?)'
+      );
       const schemes = [
         ['Kisan Credit Card', '["PAN", "LandRecord"]'],
         ['Tractor Loan', '["Aadhaar", "Quotation", "LandRecord"]'],
       ];
-      for (const [scheme_name, required_docs_json] of schemes) {
-        await client.query(
-          'INSERT INTO schemes (scheme_name, required_docs_json) VALUES ($1, $2)',
-          [scheme_name, required_docs_json]
-        );
-      }
+      const insertSchemes = db.transaction((items) => {
+        for (const item of items) insertScheme.run(...item);
+      });
+      insertSchemes(schemes);
       console.log(`✅ Seeded ${schemes.length} schemes`);
     }
 
     // Seed demo user if missing
     const demoEmail = 'ss1@gmail.com';
-    const existing = await client.query('SELECT id FROM users WHERE email = $1', [demoEmail]);
-    if (existing.rows.length === 0) {
+    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(demoEmail);
+    if (!existing) {
       const hashedPassword = bcrypt.hashSync('123', 10);
-      await client.query(
-        'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)',
-        ['Demo User', demoEmail, hashedPassword, 'Farmer']
+      db.prepare('INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
+        'Demo User', demoEmail, hashedPassword, 'Farmer'
       );
       console.log('✅ Demo user seeded: ss1@gmail.com / 123');
     }
 
-    console.log('✅ PostgreSQL database initialized successfully');
+    console.log('✅ SQLite database initialized successfully');
   } catch (err) {
     console.error('❌ DB Init Error:', err.message);
-    // Don't crash the server if DB init fails — it may already be initialized
-  } finally {
-    client.release();
   }
 }
 
-// Run async init and don't block server startup
-initDb().catch(err => console.error('DB init failed:', err.message));
+initDb();

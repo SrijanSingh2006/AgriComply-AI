@@ -19,7 +19,14 @@ instance/
 
 # Database (if using local SQLite)
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
+.agents/
+server/uploads/*
+!server/uploads/.gitkeep
+ml_service/uploads/*
+!ml_service/uploads/.gitkeep
 
 # Testing & Coverage
 .coverage

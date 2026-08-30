@@ -55,7 +55,7 @@ class Document {
   // 5. Update (Replace) File
   static async update(id, data) {
     // REMOVED 'type' and 'size' from UPDATE
-    const sql = `UPDATE documents SET file_path = ?, upload_date = NOW() WHERE id = ?`;
+    const sql = `UPDATE documents SET file_path = ?, upload_date = CURRENT_TIMESTAMP WHERE id = ?`;
     const [result] = await db.execute(sql, [
       data.filename, 
       id

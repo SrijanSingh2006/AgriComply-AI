@@ -1,8 +1,15 @@
 import os
+import sys
 import io
 import json
 import hashlib
 import base64
+
+# Ensure the ml_service directory is always on the path
+_HERE = os.path.dirname(os.path.abspath(__file__))
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+
 from google import genai
 from difflib import SequenceMatcher
 from statistics import mean, variance
@@ -89,7 +96,7 @@ def debug():
     if client:
         try:
             resp = client.models.generate_content(
-                model='gemini-3-flash-preview',
+                model='gemini-3.6-flash',
                 contents="Say OK"
             )
             ai_test = "SUCCESS: " + (resp.text or "")[:50]
@@ -195,7 +202,7 @@ def process_bundle():
             
             # Use new SDK client
             response = client.models.generate_content(
-                model='gemini-3-flash-preview',
+                model='gemini-2.5-flash',
                 contents=[prompt, gemini_file]
             )
             
@@ -293,10 +300,16 @@ def optimize_document():
 # ==========================================
 @app.route('/security/forgery-check', methods=['POST'])
 def check_forgery():
-    data = request.json
-    file_path = data.get('filePath')
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({"error": "Invalid or missing file path."}), 400
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+        
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
     try:
         analysis = detect_forgery(file_path)
         return jsonify(analysis)
@@ -305,10 +318,16 @@ def check_forgery():
 
 @app.route('/admin/ingest-pdf', methods=['POST'])
 def ingest_pdf():
-    data = request.json
-    file_path = data.get('filePath')
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({"error": "PDF not found"}), 400
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+        
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
+    
     try:
         ingest_pdf_to_vector_db(file_path)
         return jsonify({"message": "Successfully indexed PDF into FAISS database!"})
@@ -332,11 +351,15 @@ def ask_legal_bot():
 # ==========================================
 @app.route('/analyze', methods=['POST'])
 def analyze():
-    data = request.json
-    file_path = data.get('filePath')
-
-    if not file_path or not os.path.exists(file_path):
-        return jsonify({"error": "Invalid file path"}), 400
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"error": "No file selected"}), 400
+        
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(file_path)
 
     image_data = load_image_for_gemini(file_path)
     if not image_data:

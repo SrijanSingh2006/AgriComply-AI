@@ -1,10 +1,19 @@
 import os
+import sys
 import time
 import re
 from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Fix: ensure stdout uses UTF-8 to handle emoji/non-ASCII characters on Windows
+if sys.stdout and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
 
 class GeminiAdapter:
     def __init__(self):
@@ -15,9 +24,11 @@ class GeminiAdapter:
         self.client = genai.Client(api_key=api_key)
         
         self.candidate_models = [
+            "gemini-3.6-flash",
+            "gemini-3.7-flash",
             "gemini-flash-latest",
-            "gemini-3-flash-preview",
-            "gemini-3.1-flash-lite"
+            "gemini-3.5-flash",
+            "gemini-2.5-flash",
         ]
 
     def _extract_retry_delay(self, error_str):
@@ -27,12 +38,19 @@ class GeminiAdapter:
             return float(match.group(1)) + 2.0
         return 10.0
 
+    def _log(self, msg):
+        """Safe print that won't crash on Windows cp1252 consoles."""
+        try:
+            print(msg)
+        except UnicodeEncodeError:
+            print(msg.encode('ascii', errors='replace').decode('ascii'))
+
     def generate_content(self, prompt_parts):
         for model in self.candidate_models:
             # Try each model TWICE to handle temporary glitches
             for attempt in range(2): 
                 try:
-                    print(f"🤖 Requesting {model}...")
+                    self._log(f"[AI] Requesting {model}...")
                     response = self.client.models.generate_content(
                         model=model,
                         contents=prompt_parts
@@ -45,7 +63,7 @@ class GeminiAdapter:
                     # 429 Rate Limit -> Wait and Retry
                     if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                         wait_time = self._extract_retry_delay(error_str)
-                        print(f"⏳ Quota hit on {model}. Waiting {wait_time:.1f}s...")
+                        self._log(f"[AI] Quota hit on {model}. Waiting {wait_time:.1f}s...")
                         time.sleep(wait_time)
                         
                         # Retry once on the same model after waiting
@@ -55,19 +73,19 @@ class GeminiAdapter:
                                 contents=prompt_parts
                             )
                             return response.text
-                        except:
-                            print(f"⏭️ {model} exhausted. Switching to next model...")
-                            break # Move to next model in list
+                        except Exception:
+                            self._log(f"[AI] {model} exhausted. Switching to next model...")
+                            break  # Move to next model in list
                     
                     # 404 Not Found -> Skip immediately
                     if "404" in error_str or "NOT_FOUND" in error_str:
-                        print(f"❌ {model} not found/retired. Skipping.")
+                        self._log(f"[AI] {model} not found/retired. Skipping.")
                         break
                     
-                    print(f"❌ Error ({model}): {e}")
+                    self._log(f"[AI] Error ({model}): {error_str[:200]}")
                     break
         
-        print("❌ All AI models failed.")
+        self._log("[AI] All AI models failed.")
         return None
 
 gemini = GeminiAdapter()
