@@ -39,6 +39,9 @@ You can sign in with any of the demo accounts or click **Create Account** to reg
 | **FPO / Cooperative** | `fpo@demo.com` | `demo123` |
 | **MSME Agri-Business** | `msme@demo.com` | `demo123` |
 
+![Login View](docs/screenshots/login.png)
+![Registration View](docs/screenshots/register.png)
+
 *(You can also use any email/password you create on the Register page).*
 
 ---
@@ -93,7 +96,7 @@ You can sign in with any of the demo accounts or click **Create Account** to reg
      * *"What is the PM-KISAN scheme and who is eligible?"*
      * *"What documents are needed for a Kisan Credit Card (KCC)?"*
      * *"What are the penalty rules for late GST filing by an FPO?"*
-  3. Receive instant, legally referenced answers.
+  3. Receive instant, legally referenced answers with rich styled badges and suggestion chips.
 
 ![AI Legal Assistant Chatbot](docs/screenshots/chatbot.png)
 
@@ -104,7 +107,7 @@ You can sign in with any of the demo accounts or click **Create Account** to reg
   2. Switch between **Government Schemes** and **Bank Loans & Credit**.
   3. View readiness scores, missing required document badges, and click **Apply / Check Odds** to evaluate.
 
-![Growth & Schemes Hub](docs/screenshots/growth.png)
+![Growth & Schemes Hub](docs/screenshots/growth_schemes.png)
 
 ### 7. ⚖️ Compliance Hub & AI Pre-Flight Bundler (`/compliance`)
 * **What it does:** Role-specific compliance checklist, automated gap analysis, and intelligent pre-flight multi-document bundling.
@@ -117,7 +120,8 @@ You can sign in with any of the demo accounts or click **Create Account** to reg
      * **Live Bot Defense:** Type slowly in the keystroke box to see behavioral biometrics monitoring your cadence.
      * **Zero-Trust Crypto Vault:** Upload a document to generate a real-time SHA-256 cryptographic seal.
 
-![Compliance Hub & Audit Engine](docs/screenshots/compliance.png)
+![Compliance Checklist](docs/screenshots/compliance_checklist.png)
+![Compliance Audit Engine](docs/screenshots/compliance_audit_engine.png)
 
 ---
 

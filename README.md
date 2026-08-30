@@ -23,22 +23,54 @@
 ---
 
 ## 📑 Table of Contents
-- [🌟 Key Features](#-key-features)
+- [🌟 Key Features & Visual Walkthrough](#-key-features--visual-walkthrough)
+  - [1. Split-Screen Authentication & Role Onboarding](#1-split-screen-authentication--role-onboarding)
+  - [2. Dual-Track Farmer & FPO Dashboard](#2-dual-track-farmer--fpo-dashboard)
+  - [3. Secure Document Vault](#3-secure-document-vault)
+  - [4. AI Legal Compliance Hub & Gap Analysis](#4-ai-legal-compliance-hub--gap-analysis)
+  - [5. Intelligent Pre-Flight Compliance Bundler & KYC Radar](#5-intelligent-pre-flight-compliance-bundler--kyc-radar)
+  - [6. Alternative Credit Scoring (AgriScore & SHAP)](#6-alternative-credit-scoring-agriscore--shap)
+  - [7. Senior Credit Officer AI Loan Eligibility](#7-senior-credit-officer-ai-loan-eligibility)
+  - [8. Government Scheme & Bank Credit Discovery](#8-government-scheme--bank-credit-discovery)
+  - [9. Agentic Legal AI Assistant (Vector RAG)](#9-agentic-legal-ai-assistant-vector-rag)
+  - [10. Error Level Analysis (ELA) Forgery Detection](#10-error-level-analysis-ela-forgery-detection)
 - [🏗️ System Architecture](#️-system-architecture)
 - [⚡ Quick Start (1-Click Run)](#-quick-start-1-click-run)
 - [🌐 Service Ports & URLs](#-service-ports--urls)
 - [🔑 Demo Credentials](#-demo-credentials)
 - [🛠️ Tech Stack](#️-tech-stack)
-- [🧪 End-to-End Test Suite](#-end-to-end-test-suite)
+- [🧪 End-to-End Automated Test Suite](#-end-to-end-automated-test-suite)
 - [🚀 Cloud Deployment](#-cloud-deployment)
 
 ---
 
-## 🌟 Key Features
+## 🌟 Key Features & Visual Walkthrough
 
-### 1. 📂 Secure Document Vault
-* Centralized encrypted storage for identity proofs, 7/12 land records, PAN, and financial statements.
-* Instant automated AI tagging, SHA-256 cryptographic sealing, and document lifecycle (upload, replace, delete).
+### 1. Split-Screen Authentication & Role Onboarding
+* Glassmorphic split-screen interface with instant demo login shortcuts.
+* Supports **Individual Farmers**, **Farmer Producer Organizations (FPOs)**, and **Agri-MSMEs** with tailored legal checklists.
+
+<div align="center">
+  <img src="docs/screenshots/login.png" alt="Login View" width="850"/>
+  <br/><br/>
+  <img src="docs/screenshots/register.png" alt="Role Registration View" width="850"/>
+</div>
+
+---
+
+### 2. Dual-Track Farmer & FPO Dashboard
+* Live summary of document compliance health, missing mandatory filings, and immediate financial growth opportunities.
+* Actionable alert banners with 1-click document upload triggers.
+
+<div align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard Overview" width="850"/>
+</div>
+
+---
+
+### 3. Secure Document Vault
+* Centralized encrypted repository for Aadhaar, PAN, 7/12 Land Records, and Bank Statements.
+* Instant automated AI document classification, SHA-256 cryptographic sealing, and document lifecycle controls (Upload, View, Replace, Delete).
 
 <div align="center">
   <img src="docs/screenshots/vault.png" alt="Secure Document Vault" width="850"/>
@@ -46,20 +78,30 @@
 
 ---
 
-### 2. ⚖️ AI Legal Compliance Dashboard
-* Evaluates documents against role-specific regulations (Farmer / FPO / MSME).
-* **Pre-Flight Compliance Bundler**: Runs Levenshtein fuzzy matching across KYC documents to verify identity consistency.
-* **Generative Portal Optimizer**: Applies morphological filtering and adaptive thresholding to auto-clean document shadows and enforce portal file-size limits.
+### 4. AI Legal Compliance Hub & Gap Analysis
+* Analyzes uploaded documents against regional agricultural compliance laws and statutory deadlines.
+* Role-specific tracking (Farmer Land Titling / FPO Annual MCA Filings / MSME GST Filings) with estimated non-compliance penalty calculations.
 
 <div align="center">
-  <img src="docs/screenshots/compliance.png" alt="Compliance Dashboard" width="850"/>
+  <img src="docs/screenshots/compliance_checklist.png" alt="Compliance Hub Checklist" width="850"/>
 </div>
 
 ---
 
-### 3. 📈 Alternative Credit Scoring (AgriScore)
-* Generates an alternative financial credit score (300–900) for farmers lacking traditional CIBIL histories.
-* Uses proxy variables (land acreage, annual turnover, seniority, debt burden) evaluated with an XGBoost regressor (94.5% $R^2$ accuracy) and SHAP-style breakdown.
+### 5. Intelligent Pre-Flight Compliance Bundler & KYC Radar
+* **Live Identity Verification**: Extracts KYC entities across documents and executes Levenshtein fuzzy string matching.
+* **Generative Portal Optimizer**: Applies adaptive thresholding and morphological filters to remove shadows and enforce government portal file-size limits.
+* **Zero-Trust Crypto Vault**: Computes client-side and server-side SHA-256 cryptographic seals.
+
+<div align="center">
+  <img src="docs/screenshots/compliance_audit_engine.png" alt="Compliance Audit Engine" width="850"/>
+</div>
+
+---
+
+### 6. Alternative Credit Scoring (AgriScore & SHAP)
+* Generates an alternative financial credit score (**300–900**) for farmers without traditional CIBIL scores.
+* Uses proxy variables (land acreage, annual turnover, seniority, debt burden) with an **XGBoost regressor (94.5% $R^2$ accuracy)** and visual SHAP-style breakdown.
 
 <div align="center">
   <img src="docs/screenshots/credit_score.png" alt="Credit Intelligence" width="850"/>
@@ -67,9 +109,9 @@
 
 ---
 
-### 4. 🧮 Senior Credit Officer AI Loan Calculator
-* Multimodal evaluation of loan requests against actual vault records.
-* Google Gemini analyzes financial capacity, delivers verified confidence scores, and provides concrete improvement advice.
+### 7. Senior Credit Officer AI Loan Eligibility
+* Multimodal evaluation of loan applications against bank credit policies and actual vault records.
+* Powered by **Google Gemini 3.7 Flash** to deliver verified approval odds, financial reasoning, and actionable checklists.
 
 <div align="center">
   <img src="docs/screenshots/loan_calculator.png" alt="AI Loan Calculator" width="850"/>
@@ -77,19 +119,19 @@
 
 ---
 
-### 5. 🏛️ Government Scheme & Loan Discovery
-* Matches user profiles against nationwide subsidies (PM-KISAN, PMFBY) and bank credit products (SBI KCC, Machinery Loans).
-* Calculates instant document readiness match scores and flags missing prerequisite records.
+### 8. Government Scheme & Bank Credit Discovery
+* Matches user profiles against active government subsidies (**PM-KISAN**, **PMFBY**, **SMAM**) and bank credit products (**KCC**, **Tractor Loans**).
+* Real-time document readiness match percentages and missing prerequisite badges.
 
 <div align="center">
-  <img src="docs/screenshots/growth.png" alt="Growth Hub" width="850"/>
+  <img src="docs/screenshots/growth_schemes.png" alt="Growth Hub" width="850"/>
 </div>
 
 ---
 
-### 6. 💬 Agricultural Legal RAG Assistant
-* Natural-language legal chatbot for Indian agricultural laws, farmer rights, and compliance procedures.
-* Powered by Retrieval-Augmented Generation (RAG) vector embeddings.
+### 9. Agentic Legal AI Assistant (Vector RAG)
+* Conversational AI legal assistant powered by Retrieval-Augmented Generation (RAG) over official agricultural PDFs.
+* Formatted UI with styled emerald badges, numbered steps, quick suggestion chips, and one-click answer copying.
 
 <div align="center">
   <img src="docs/screenshots/chatbot.png" alt="Legal AI Chatbot" width="850"/>
@@ -97,9 +139,9 @@
 
 ---
 
-### 7. 🕵️ Forgery Detection & Behavioral Biometrics
-* **Error Level Analysis (ELA)**: Detects digital pixel tampering, forged text, and photoshopped documents.
-* **Keystroke Behavioral Biometrics**: Live flight-time cadence analysis to stop synthetic bot attacks.
+### 10. Error Level Analysis (ELA) Forgery Detection
+* Detects digital pixel tampering, forged text, and image manipulation in uploaded agricultural documents.
+* Calculates pixel compression anomalies and provides an authenticity confidence score.
 
 <div align="center">
   <img src="docs/screenshots/fraud_detection.png" alt="Fraud Detection" width="850"/>
@@ -114,7 +156,7 @@ graph TD
     Client["⚛️ React + Vite Frontend<br/>(Port 3000)"]
     NodeServer["🟢 Node.js / Express API<br/>(Port 5000)"]
     PyML["🐍 Python ML Microservice<br/>(Port 5001)"]
-    Gemini["✨ Google Gemini API<br/>(GenAI SDK)"]
+    Gemini["✨ Google Gemini 3.7 Flash<br/>(GenAI SDK)"]
     DB[("💾 SQLite / PostgreSQL<br/>Database")]
 
     Client -->|REST & FormData| NodeServer
@@ -128,11 +170,12 @@ graph TD
 
 ## ⚡ Quick Start (1-Click Run)
 
-### 🖱️ Windows (1-Click Launcher)
-1. Double-click **[`start-local.bat`](start-local.bat)** (or **[`start-demo.bat`](start-demo.bat)**).
-2. All 3 services will launch in separate windows and open **`http://localhost:3000`** in your default browser.
+### 🖱️ Option 1: 1-Click Launch (Windows)
+1. Open this project folder in File Explorer.
+2. **Double-click** on [`start-local.bat`](start-local.bat) (or [`start-demo.bat`](start-demo.bat)).
+3. All 3 services will launch in separate windows and open **`http://localhost:3000`** in your default browser.
 
-### 💻 Command Line
+### 💻 Option 2: Run via Terminal
 ```powershell
 .\start-local.bat
 ```
@@ -141,21 +184,21 @@ graph TD
 
 ## 🌐 Service Ports & URLs
 
-| Service | Port | URL | Description |
+| Service | Port | URL | Role / Function |
 |---|---|---|---|
-| **Frontend Web App** | `3000` | **[http://localhost:3000](http://localhost:3000)** | React 18 UI with Glassmorphism |
-| **Backend REST API** | `5000` | **[http://localhost:5000](http://localhost:5000)** | Express.js API & SQLite database |
-| **Python ML Engine** | `5001` | **[http://localhost:5001](http://localhost:5001)** | Flask ML microservice (Gemini 3.7) |
+| **Frontend Web App** | `3000` | **[http://localhost:3000](http://localhost:3000)** | React 18 UI with Glassmorphism & Micro-animations |
+| **Backend REST API** | `5000` | **[http://localhost:5000](http://localhost:5000)** | Express.js API, JWT Auth & Database Layer |
+| **Python ML Microservice** | `5001` | **[http://localhost:5001](http://localhost:5001)** | Flask ML microservice (Gemini 3.7 + Scorer) |
 
 ---
 
 ## 🔑 Demo Credentials
 
-| Role | Email | Password |
-|---|---|---|
-| **Individual Farmer** | `farmer@demo.com` | `demo123` |
-| **FPO / Cooperative** | `fpo@demo.com` | `demo123` |
-| **Agri-Business (MSME)** | `msme@demo.com` | `demo123` |
+| Role | Email | Password | Pre-configured Features |
+|---|---|---|---|
+| **Individual Farmer** | `farmer@demo.com` | `demo123` | PM-KISAN, Land Record Tracking, KCC Loans |
+| **FPO / Cooperative** | `fpo@demo.com` | `demo123` | MCA Compliance, Audit Bundler, Machinery Subsidies |
+| **Agri-Business (MSME)** | `msme@demo.com` | `demo123` | GST Compliance, Working Capital Loans, ELA Scanner |
 
 *(Or register a new account on the Register page).*
 
@@ -164,15 +207,15 @@ graph TD
 ## 🛠️ Tech Stack
 
 * **Frontend:** React 18, Vite, Tailwind CSS, Framer Motion, Lucide React, Recharts
-* **Backend:** Node.js, Express.js, Better-SQLite3 / PostgreSQL, Multer, JWT
+* **Backend:** Node.js, Express.js, Better-SQLite3 / PostgreSQL, Multer, JWT, Cryptography
 * **ML Microservice:** Python 3.13, Flask, Flask-CORS, Flask-SQLAlchemy, NumPy, Pillow, PyPDF
-* **AI & Security:** Google Gemini API, Error Level Analysis (ELA), SHA-256 Crypto Hashing, Keystroke Dynamics
+* **AI & Security:** Google Gemini 3.7 Flash API, Vector Cosine Search, Error Level Analysis (ELA), SHA-256 Crypto Hashing, Keystroke Dynamics
 
 ---
 
-## 🧪 End-to-End Test Suite
+## 🧪 End-to-End Automated Test Suite
 
-An automated end-to-end test suite validates all 20 functions across the stack:
+An automated test suite validates all 20 functions across the entire stack:
 
 ```powershell
 $NODE_EXE = "C:\Users\srijan\AppData\Local\nodejs\node-v22.17.0-win-x64\node.exe"
