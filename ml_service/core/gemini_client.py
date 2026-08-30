@@ -24,11 +24,9 @@ class GeminiAdapter:
         self.client = genai.Client(api_key=api_key)
         
         self.candidate_models = [
-            "gemini-3.6-flash",
             "gemini-3.7-flash",
-            "gemini-flash-latest",
-            "gemini-3.5-flash",
-            "gemini-2.5-flash",
+            "gemini-3.6-flash",
+            "gemini-flash-latest"
         ]
 
     def _extract_retry_delay(self, error_str):
@@ -47,45 +45,19 @@ class GeminiAdapter:
 
     def generate_content(self, prompt_parts):
         for model in self.candidate_models:
-            # Try each model TWICE to handle temporary glitches
-            for attempt in range(2): 
-                try:
-                    self._log(f"[AI] Requesting {model}...")
-                    response = self.client.models.generate_content(
-                        model=model,
-                        contents=prompt_parts
-                    )
+            try:
+                self._log(f"[AI] Requesting {model}...")
+                response = self.client.models.generate_content(
+                    model=model,
+                    contents=prompt_parts
+                )
+                if response and response.text:
                     return response.text
-                
-                except Exception as e:
-                    error_str = str(e)
-                    
-                    # 429 Rate Limit -> Wait and Retry
-                    if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                        wait_time = self._extract_retry_delay(error_str)
-                        self._log(f"[AI] Quota hit on {model}. Waiting {wait_time:.1f}s...")
-                        time.sleep(wait_time)
-                        
-                        # Retry once on the same model after waiting
-                        try:
-                            response = self.client.models.generate_content(
-                                model=model,
-                                contents=prompt_parts
-                            )
-                            return response.text
-                        except Exception:
-                            self._log(f"[AI] {model} exhausted. Switching to next model...")
-                            break  # Move to next model in list
-                    
-                    # 404 Not Found -> Skip immediately
-                    if "404" in error_str or "NOT_FOUND" in error_str:
-                        self._log(f"[AI] {model} not found/retired. Skipping.")
-                        break
-                    
-                    self._log(f"[AI] Error ({model}): {error_str[:200]}")
-                    break
-        
-        self._log("[AI] All AI models failed.")
+            except Exception as e:
+                error_str = str(e)
+                self._log(f"[AI] {model} notice: {error_str[:120]}... Switching model.")
+                continue
+
         return None
 
 gemini = GeminiAdapter()

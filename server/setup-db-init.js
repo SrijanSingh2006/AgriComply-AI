@@ -96,15 +96,23 @@ function initDb() {
       console.log(`✅ Seeded ${schemes.length} schemes`);
     }
 
-    // Seed demo user if missing
-    const demoEmail = 'ss1@gmail.com';
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(demoEmail);
-    if (!existing) {
-      const hashedPassword = bcrypt.hashSync('123', 10);
-      db.prepare('INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
-        'Demo User', demoEmail, hashedPassword, 'Farmer'
-      );
-      console.log('✅ Demo user seeded: ss1@gmail.com / 123');
+    // Seed demo users if missing
+    const demoAccounts = [
+      { name: 'John Farmer', email: 'farmer@demo.com', password: 'demo123', role: 'Farmer' },
+      { name: 'Kisan FPO Cooperative', email: 'fpo@demo.com', password: 'demo123', role: 'FPO' },
+      { name: 'AgriTech Enterprises', email: 'msme@demo.com', password: 'demo123', role: 'MSME' },
+      { name: 'Demo User', email: 'ss1@gmail.com', password: '123', role: 'Farmer' }
+    ];
+
+    for (const acc of demoAccounts) {
+      const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(acc.email);
+      if (!existing) {
+        const hashedPassword = bcrypt.hashSync(acc.password, 10);
+        db.prepare('INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)').run(
+          acc.name, acc.email, hashedPassword, acc.role
+        );
+        console.log(`✅ Demo user seeded: ${acc.email} / ${acc.password} (${acc.role})`);
+      }
     }
 
     console.log('✅ SQLite database initialized successfully');

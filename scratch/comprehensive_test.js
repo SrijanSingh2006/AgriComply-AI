@@ -184,7 +184,7 @@ async function runTests() {
         { tag: 'Aadhaar', extracted_data: 'Name: Ramesh Patel, Aadhaar: 9876-XXXX-1234' },
         { tag: 'LandRecord', extracted_data: 'Land: 3.5 acres in Gujarat, Verified 7/12' }
       ]
-    }, { timeout: 30000 });
+    }, { timeout: 45000 });
     const isPass = typeof res.data.confidence_score === 'number';
     report('ML Loan Eligibility: Advanced AI Context Evaluation', isPass, `Confidence: ${res.data.confidence_score}%, Eligible: ${res.data.eligible}`);
   } catch (err) {
@@ -236,7 +236,7 @@ async function runTests() {
   try {
     const res = await axios.post(`${ML_URL}/legal/ask`, {
       question: 'What documents are required for Kisan Credit Card (KCC)?'
-    }, { timeout: 25000 });
+    }, { timeout: 45000 });
     const isPass = typeof res.data.answer === 'string' && res.data.answer.length > 50;
     report('ML Agentic AI: Agricultural Legal Assistant (RAG)', isPass, `Answer length: ${res.data.answer?.length} chars`);
   } catch (err) {

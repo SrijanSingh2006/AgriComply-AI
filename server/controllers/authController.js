@@ -32,7 +32,8 @@ exports.login = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
     // Include role in Token and Response
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const jwtSecret = process.env.JWT_SECRET || 'agricomply_super_secret_jwt_key_2026';
+    const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, { expiresIn: '24h' });
     
     res.json({ 
         token, 

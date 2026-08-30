@@ -9,8 +9,9 @@ module.exports = (req, res, next) => {
     // 2. Remove "Bearer " prefix to get the raw token string
     const cleanToken = token.replace("Bearer ", "");
 
-    // 3. Verify the token using your secret key
-    const verified = jwt.verify(cleanToken, process.env.JWT_SECRET);
+    // 3. Verify the token using secret key
+    const jwtSecret = process.env.JWT_SECRET || 'agricomply_super_secret_jwt_key_2026';
+    const verified = jwt.verify(cleanToken, jwtSecret);
 
     // 4. Attach the decoded payload (id, role, iat, exp) to req.user
     // This is what makes 'req.user.role' available in your controllers!
