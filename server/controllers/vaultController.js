@@ -1,13 +1,24 @@
-﻿const Document = require('../models/Document');
+const Document = require('../models/Document');
 const fs = require('fs');
 const path = require('path');
 const { uploadsDir } = require('../config/storage');
+
+const hasStoredFile = (doc) => {
+    const storedFilename = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
+    if (!storedFilename) return false;
+
+    try {
+        return fs.statSync(path.join(uploadsDir, storedFilename)).isFile();
+    } catch {
+        return false;
+    }
+};
 
 exports.getDocuments = async (req, res) => {
     try {
         const userId = req.user.id;
         const docs = await Document.findByUserId(userId);
-        res.json(docs);
+        res.json(docs.map(doc => ({ ...doc, available: hasStoredFile(doc) })));
     } catch (err) {
         console.error("Get Docs Error:", err);
         res.status(500).json({ error: "Failed to fetch documents" });
@@ -24,7 +35,15 @@ exports.exportAllDocuments = async (req, res) => {
         await zipService.createBundle(userId, null, 'AgriComply_Vault_Export', res, { preserveNames: true });
     } catch (err) {
         console.error("Vault Export Error:", err);
-        if (!res.headersSent) res.status(500).json({ error: "Could not export your vault" });
+        if (!res.headersSent) {
+            const unavailable = err.code === 'VAULT_FILES_UNAVAILABLE';
+            const count = Number(err.unavailableCount) || 0;
+            res.status(unavailable ? 409 : 500).json({
+                error: unavailable
+                    ? count + ' saved file' + (count === 1 ? ' is' : 's are') + ' unavailable. Replace the affected file' + (count === 1 ? '' : 's') + ' before exporting.'
+                    : "Could not export your vault"
+            });
+        }
     }
 };
 
@@ -34,9 +53,9 @@ exports.uploadDocument = async (req, res) => {
 
         const userId = req.user.id;
         const { tag } = req.body;
-        
-        
-        
+
+
+
         await Document.create({
             user_id: userId,
             originalFilename: req.file.originalname,
@@ -66,7 +85,9 @@ exports.downloadDocument = async (req, res) => {
         if (!storedFilename || !downloadName) return res.status(404).json({ error: "File not found" });
 
         const filePath = path.join(uploadsDir, storedFilename);
-        if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File is no longer available" });
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: "File is no longer available. Replace it with a new copy to restore it." });
+        }
 
         return res.download(filePath, downloadName);
     } catch (err) {
@@ -78,16 +99,16 @@ exports.downloadDocument = async (req, res) => {
 exports.deleteDocument = async (req, res) => {
     try {
         const fileId = req.params.id;
-        
-        
+
+
         const doc = await Document.findById(fileId);
         if (!doc || String(doc.user_id) !== String(req.user.id)) return res.status(404).json({ error: "File not found" });
 
-        
+
         const fileName = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
 
         if (fileName) {
-            
+
             const filePath = path.join(uploadsDir, fileName);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
@@ -96,7 +117,7 @@ exports.deleteDocument = async (req, res) => {
             console.warn("File record found but no filename/path associated.");
         }
 
-        
+
         await Document.delete(fileId);
 
         res.json({ message: "Document deleted successfully" });
@@ -109,17 +130,17 @@ exports.deleteDocument = async (req, res) => {
 exports.replaceDocument = async (req, res) => {
     try {
         const fileId = req.params.id;
-        
+
         if (!req.file) return res.status(400).json({ error: "No new file uploaded" });
 
-        
+
         const oldDoc = await Document.findById(fileId);
         if (!oldDoc || String(oldDoc.user_id) !== String(req.user.id)) {
             if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
             return res.status(404).json({ error: "Original file not found" });
         }
 
-        
+
         const oldFileName = path.basename(String(oldDoc.stored_filename || oldDoc.file_path || '').replace(/\\/g, '/'));
         const oldPath = oldFileName ? path.join(uploadsDir, oldFileName) : null;
 

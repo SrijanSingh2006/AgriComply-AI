@@ -4,6 +4,14 @@ const archiver = require('archiver');
 const Document = require('../models/Document');
 const { uploadsDir } = require('../config/storage');
 
+const isRegularFile = (filePath) => {
+  try {
+    return fs.statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
+};
+
 exports.createBundle = async (userId, docTags, outputName, res, options = {}) => {
   // 1. Fetch all file records for this user
   const allDocs = await Document.findByUserId(userId);
@@ -20,15 +28,29 @@ exports.createBundle = async (userId, docTags, outputName, res, options = {}) =>
     throw new Error("No matching documents found in Vault to zip.");
   }
 
+  const unavailableDocs = [];
   docsToZip = docsToZip.filter(doc => {
     const storedFilename = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
-    if (!storedFilename) return false;
+    if (!storedFilename) {
+      unavailableDocs.push(doc);
+      return false;
+    }
 
     const filePath = path.join(uploadsDir, storedFilename);
-    const available = fs.existsSync(filePath) && fs.statSync(filePath).isFile();
-    if (!available) console.warn('File missing from disk: ' + storedFilename);
+    const available = isRegularFile(filePath);
+    if (!available) {
+      console.warn('File missing from disk: ' + storedFilename);
+      unavailableDocs.push(doc);
+    }
     return available;
   });
+
+  if (unavailableDocs.length > 0) {
+    const error = new Error('One or more saved files are unavailable.');
+    error.code = 'VAULT_FILES_UNAVAILABLE';
+    error.unavailableCount = unavailableDocs.length;
+    throw error;
+  }
 
   if (docsToZip.length === 0) {
     throw new Error("No available files found in Vault to zip.");

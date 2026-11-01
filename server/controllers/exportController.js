@@ -11,7 +11,7 @@ exports.downloadComplianceBundle = async (req, res) => {
   } catch (err) {
     console.error("Export Error:", err);
     if (!res.headersSent) {
-      res.status(500).json({ error: err.message });
+      res.status(err.code === 'VAULT_FILES_UNAVAILABLE' ? 409 : 500).json({ error: err.message });
     }
   }
 };
@@ -27,7 +27,7 @@ exports.downloadLoanPacket = async (req, res) => {
   } catch (err) {
     console.error("Export Error:", err);
     if (!res.headersSent) {
-      res.status(500).json({ error: err.message });
+      res.status(err.code === 'VAULT_FILES_UNAVAILABLE' ? 409 : 500).json({ error: err.message });
     }
   }
 };
