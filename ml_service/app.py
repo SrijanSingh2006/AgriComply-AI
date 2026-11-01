@@ -5,6 +5,7 @@ import json
 import hashlib
 import base64
 import hmac
+import uuid
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
@@ -159,19 +160,22 @@ def process_bundle():
 
     files = request.files.getlist('documents')
     extracted_names = {}
+    temporary_paths = []
 
     for file in files:
         if file.filename == '':
             continue
             
-        filename = secure_filename(file.filename)
+        original_name = secure_filename(file.filename)
+        filename = f"{uuid.uuid4().hex}_{original_name}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
+        temporary_paths.append(file_path)
 
         try:
             print(f"🤖 Extracting data from {filename}...")
             local_name = None
-            local_doc_type = filename
+            local_doc_type = original_name
             
             if filename.lower().endswith('.pdf'):
                 try:
@@ -217,11 +221,17 @@ def process_bundle():
                     doc_type = f"{doc_type} (2)"
                 extracted_names[doc_type] = name
             else:
-                extracted_names[filename] = "Verified Entity"
+                extracted_names[local_doc_type] = "Extraction Failed"
                 
         except Exception as e:
             print(f"Extraction notice for {filename}: {e}")
-            extracted_names[filename] = "John Farmer"
+            extracted_names[local_doc_type] = "Extraction Failed"
+
+    for temporary_path in temporary_paths:
+        try:
+            os.remove(temporary_path)
+        except OSError:
+            pass
 
     def similar(a, b):
         return SequenceMatcher(None, a.lower(), b.lower()).ratio()
@@ -297,7 +307,7 @@ def check_forgery():
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
         
-    filename = secure_filename(file.filename)
+    filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     
@@ -306,6 +316,11 @@ def check_forgery():
         return jsonify(analysis)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
 
 @app.route('/admin/ingest-pdf', methods=['POST'])
 def ingest_pdf():
@@ -321,7 +336,7 @@ def ingest_pdf():
     if not file.filename or not file.filename.lower().endswith('.pdf'):
         return jsonify({"error": "No file selected"}), 400
         
-    filename = secure_filename(file.filename)
+    filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
     
@@ -330,6 +345,11 @@ def ingest_pdf():
         return jsonify({"message": "Successfully indexed PDF into FAISS database!"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    finally:
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
 
 @app.route('/legal/ask', methods=['POST'])
 def ask_legal_bot():
@@ -351,33 +371,38 @@ def analyze():
     if file.filename == '':
         return jsonify({"error": "No file selected"}), 400
         
-    filename = secure_filename(file.filename)
+    filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
+    try:
+        image_data = load_image_for_gemini(file_path)
+        if not image_data:
+            return jsonify({"error": "Could not process image file"}), 500
 
-    image_data = load_image_for_gemini(file_path)
-    if not image_data:
-        return jsonify({"error": "Could not process image file"}), 500
+        classification_result = classify_document(image_data)
+        doc_type = classification_result.get("type", "Unknown")
 
-    classification_result = classify_document(image_data)
-    doc_type = classification_result.get("type", "Unknown")
+        doc_type_clean = doc_type.strip().lower()
+        for raw, standard in TAG_NORMALIZER.items():
+            if doc_type_clean == raw.lower():
+                doc_type = standard
+                classification_result["type"] = doc_type
+                break
 
-    doc_type_clean = doc_type.strip().lower()
-    for raw, standard in TAG_NORMALIZER.items():
-        if doc_type_clean == raw.lower():
-            doc_type = standard
-            classification_result["type"] = doc_type
-            break
+        extraction_result = {}
+        if doc_type != "Unknown":
+            extraction_result = extract_data(image_data, doc_type)
+            extraction_result = mask_pii(extraction_result)
 
-    extraction_result = {}
-    if doc_type != "Unknown":
-        extraction_result = extract_data(image_data, doc_type)
-        extraction_result = mask_pii(extraction_result)
-
-    return jsonify({
-        "classification": classification_result,
-        "extraction": extraction_result
-    })
+        return jsonify({
+            "classification": classification_result,
+            "extraction": extraction_result
+        })
+    finally:
+        try:
+            os.remove(file_path)
+        except OSError:
+            pass
 
 def get_gemini_text(response):
     if isinstance(response, str):
@@ -553,13 +578,6 @@ def calculate_alt_credit_score():
             existing_loans=float(data.get('existing_loans', 0)),
             experience=int(data.get('experience', 5))
         )
-        
-        score_data['performance_metrics'] = {
-            "model_type": "XGBoost Regressor",
-            "r2_score": 0.945,
-            "rmse": 12.42,
-            "training_samples": 2001
-        }
         
         return jsonify(score_data)
     except Exception as e:

@@ -58,10 +58,11 @@ def detect_forgery(file_path: str) -> dict:
         # Text-only PDF — can't do pixel ELA, return safe
         if original is None:
             return {
-                "is_tampered": False,
-                "forgery_confidence_score": 0.0,
+                "is_tampered": None,
+                "analysis_available": False,
+                "forgery_confidence_score": None,
                 "max_pixel_anomaly": 0,
-                "status": "Safe: Text PDF — pixel analysis not applicable"
+                "status": "Pixel analysis unavailable for a text PDF"
             }
 
         # Resave at 90% quality to create a compression baseline
@@ -84,9 +85,10 @@ def detect_forgery(file_path: str) -> dict:
 
         return {
             "is_tampered": is_tampered,
+            "analysis_available": True,
             "forgery_confidence_score": round(min((stat / 10.0) * 100, 100), 2),
             "max_pixel_anomaly": max_diff,
-            "status": "High Risk: Modification Detected" if is_tampered else "Safe: Authentic Document"
+            "status": "Unusual compression signal detected — review manually" if is_tampered else "No unusual compression signal detected"
         }
 
     except Exception as e:

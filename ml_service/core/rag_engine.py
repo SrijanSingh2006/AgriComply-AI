@@ -21,7 +21,7 @@ if api_key:
     client = genai.Client(api_key=api_key)
 
 EMBEDDING_MODEL = 'gemini-embedding-001'
-CHAT_MODEL_NAME = 'gemini-2.5-flash'
+CHAT_MODEL_NAME = 'gemini-3.6-flash'
 
 # In-memory vector store (numpy arrays, no FAISS needed)
 _vectors = None        # shape: (N, D) float32
@@ -140,6 +140,13 @@ from .gemini_client import gemini
 
 def query_rag_bot(user_question: str) -> str:
     global _vectors, _chunks
+
+    if not gemini.client:
+        return (
+            "Live legal AI is not configured on this service because no Gemini API key is set. "
+            "I can’t safely provide current legal or scheme guidance right now. Please check the "
+            "official scheme website or your local agriculture office."
+        )
 
     # No documents ingested — use Gemini directly as agricultural legal AI
     if _vectors is None or len(_chunks) == 0:
