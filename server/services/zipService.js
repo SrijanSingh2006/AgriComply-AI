@@ -9,7 +9,8 @@ exports.createBundle = async (userId, docTags, outputName, res) => {
   const allDocs = await Document.findByUserId(userId);
   
   // 2. Filter: Only select documents that match the required tags (e.g., 'PAN', 'ITR')
-  const docsToZip = allDocs.filter(doc => docTags.includes(doc.tag));
+  const requiredTags = new Set(docTags.map(tag => String(tag).toLowerCase().replace(/[^a-z0-9]/g, '')));
+  const docsToZip = allDocs.filter(doc => requiredTags.has(String(doc.tag || '').toLowerCase().replace(/[^a-z0-9]/g, '')));
 
   if (docsToZip.length === 0) {
     throw new Error("No matching documents found in Vault to zip.");
@@ -29,13 +30,14 @@ exports.createBundle = async (userId, docTags, outputName, res) => {
   // 6. Append files from local storage to the ZIP
   docsToZip.forEach(doc => {
     // Ensure the file actually exists on disk before adding
-    const fileName = doc.file_path || doc.filename;
-    const filePath = path.isAbsolute(fileName) ? fileName : path.join(uploadsDir, fileName);
+    const storedFilename = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
+    const originalFilename = path.basename(String(doc.filename || doc.file_name || storedFilename).replace(/\\/g, '/'));
+    const filePath = path.join(uploadsDir, storedFilename);
     if (fs.existsSync(filePath)) {
       // Add file to zip, renaming it to something clean (e.g., "PAN.pdf")
-      archive.file(filePath, { name: `${doc.tag}${path.extname(fileName)}` });
+      archive.file(filePath, { name: `${doc.tag}${path.extname(originalFilename)}` });
     } else {
-      console.warn(`File missing from disk: ${doc.file_path}`);
+      console.warn(`File missing from disk: ${storedFilename}`);
     }
   });
 

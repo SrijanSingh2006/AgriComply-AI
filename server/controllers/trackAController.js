@@ -20,12 +20,13 @@ exports.getComplianceStatus = async (req, res) => {
     const userDocs = await Document.findByUserId(userId);
     
     // Create a simple array of tags the user HAS (e.g., ['PAN', 'LandRecord'])
-    const userTags = userDocs.map(d => d.tag);
+    const normalizeTag = (tag) => String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const userTags = new Set(userDocs.map(d => normalizeTag(d.tag)));
 
     // 3. Gap Analysis (Compare Rules vs. User Docs)
     const status = rules.map(rule => {
       // Check if the user has the required document tag
-      const hasDoc = userTags.includes(rule.required_doc_tag);
+      const hasDoc = userTags.has(normalizeTag(rule.required_doc_tag));
       
       return {
         ruleName: rule.rule_name,

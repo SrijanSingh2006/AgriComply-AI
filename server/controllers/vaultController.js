@@ -25,7 +25,8 @@ exports.uploadDocument = async (req, res) => {
         
         await Document.create({
             user_id: userId,
-            filename: req.file.filename, 
+            originalFilename: req.file.originalname,
+            storedFilename: req.file.filename,
             tag: tag || "UNCATEGORIZED", 
             type: req.file.mimetype,
             size: req.file.size
@@ -46,13 +47,14 @@ exports.downloadDocument = async (req, res) => {
             return res.status(404).json({ error: "File not found" });
         }
 
-        const fileName = path.basename(doc.filename || doc.file_path || '');
-        if (!fileName) return res.status(404).json({ error: "File not found" });
+        const storedFilename = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
+        const downloadName = path.basename(String(doc.filename || doc.file_name || storedFilename).replace(/\\/g, '/'));
+        if (!storedFilename || !downloadName) return res.status(404).json({ error: "File not found" });
 
-        const filePath = path.join(uploadsDir, fileName);
+        const filePath = path.join(uploadsDir, storedFilename);
         if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File is no longer available" });
 
-        return res.download(filePath, fileName);
+        return res.download(filePath, downloadName);
     } catch (err) {
         console.error("Download Error:", err);
         return res.status(500).json({ error: "Download failed" });
@@ -68,7 +70,7 @@ exports.deleteDocument = async (req, res) => {
         if (!doc || String(doc.user_id) !== String(req.user.id)) return res.status(404).json({ error: "File not found" });
 
         
-        const fileName = doc.filename || doc.file_path; 
+        const fileName = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
 
         if (fileName) {
             
@@ -104,27 +106,25 @@ exports.replaceDocument = async (req, res) => {
         }
 
         
-        const oldFileName = oldDoc.filename || oldDoc.file_path;
+        const oldFileName = path.basename(String(oldDoc.stored_filename || oldDoc.file_path || '').replace(/\\/g, '/'));
+        const oldPath = oldFileName ? path.join(uploadsDir, oldFileName) : null;
 
-        if (oldFileName) {
-            
-            const oldPath = path.join(uploadsDir, oldFileName);
-            if (fs.existsSync(oldPath)) {
-                fs.unlinkSync(oldPath);
-            }
-        }
-
-        
         await Document.update(fileId, {
-            filename: req.file.filename,
+            originalFilename: req.file.originalname,
+            storedFilename: req.file.filename,
             type: req.file.mimetype,
             size: req.file.size,
             upload_date: new Date()
         });
 
+        if (oldPath && oldPath !== req.file.path && fs.existsSync(oldPath)) {
+            fs.unlinkSync(oldPath);
+        }
+
         res.json({ message: "Document replaced successfully" });
 
     } catch (err) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error("Replace Error:", err);
         res.status(500).json({ error: "Replace failed" });
     }
