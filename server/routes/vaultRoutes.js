@@ -8,6 +8,7 @@ if (!vaultController.getDocuments || !vaultController.deleteDocument) {
     console.error("CRITICAL ERROR: vaultController functions are undefined. Check exports in vaultController.js");
 }
 router.get('/', authMiddleware, vaultController.getDocuments);
+router.get('/export', authMiddleware, vaultController.exportAllDocuments);
 router.get('/download/:id', authMiddleware, vaultController.downloadDocument);
 router.post('/upload', authMiddleware, upload.single('file'), vaultController.uploadDocument);
 router.delete('/delete/:id', authMiddleware, vaultController.deleteDocument);

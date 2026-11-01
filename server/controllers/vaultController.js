@@ -14,6 +14,20 @@ exports.getDocuments = async (req, res) => {
     }
 };
 
+exports.exportAllDocuments = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const docs = await Document.findByUserId(userId);
+        if (!docs.length) return res.status(404).json({ error: "Your vault is empty" });
+
+        const zipService = require('../services/zipService');
+        await zipService.createBundle(userId, null, 'AgriComply_Vault_Export', res, { preserveNames: true });
+    } catch (err) {
+        console.error("Vault Export Error:", err);
+        if (!res.headersSent) res.status(500).json({ error: "Could not export your vault" });
+    }
+};
+
 exports.uploadDocument = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
