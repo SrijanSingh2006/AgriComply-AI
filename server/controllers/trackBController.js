@@ -1,14 +1,31 @@
 ﻿const Document = require('../models/Document');
 const axios = require('axios');
+const { hasStoredFile } = require('../services/fileAvailability');
 
 const PYTHON_SERVICE_URL = process.env.ML_URL || process.env.PYTHON_URL || 'http://127.0.0.1:5001';
+
+const rankOpportunities = (items, userTags) => {
+  const normalizeTag = (tag) => {
+    const normalized = String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const aliases = { bankpassbook: 'bankstatement', kisancreditcard: 'kcc' };
+    return aliases[normalized] || normalized;
+  };
+  const availableTags = new Set(userTags.map(normalizeTag));
+
+  return items.map((item) => {
+    const requiredDocs = Array.isArray(item.required_docs) ? item.required_docs : [];
+    const missingDocs = requiredDocs.filter((required) => !availableTags.has(normalizeTag(required)));
+    const score = requiredDocs.length ? Math.round(((requiredDocs.length - missingDocs.length) / requiredDocs.length) * 100) : 100;
+    return { ...item, match_score: score, missing_docs: missingDocs, is_eligible: missingDocs.length === 0 };
+  }).sort((left, right) => right.match_score - left.match_score);
+};
 
 exports.getEligibleSchemes = async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role || 'Farmer'; 
 
-    const userDocs = await Document.findByUserId(userId);
+    const userDocs = (await Document.findByUserId(userId)).filter(hasStoredFile);
     const userTags = userDocs.map(d => d.tag);
 
     const userProfile = {
@@ -43,7 +60,10 @@ exports.getEligibleSchemes = async (req, res) => {
       ]
     };
 
-    res.json(fallbackData);
+    res.json({
+      schemes: rankOpportunities(fallbackData.schemes, userTags),
+      loans: rankOpportunities(fallbackData.loans, userTags),
+    });
   } catch (err) {
     console.error("Scheme Fetch Error:", err.message);
     res.status(500).json({ error: "Failed to fetch AI schemes" });
@@ -58,7 +78,7 @@ exports.checkLoanEligibility = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role || 'Farmer';
 
-    const userDocs = await Document.findByUserId(userId);
+    const userDocs = (await Document.findByUserId(userId)).filter(hasStoredFile);
     const userTags = userDocs.map(d => d.tag);
 
     

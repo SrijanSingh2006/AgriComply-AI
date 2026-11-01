@@ -2,17 +2,7 @@ const Document = require('../models/Document');
 const fs = require('fs');
 const path = require('path');
 const { uploadsDir } = require('../config/storage');
-
-const hasStoredFile = (doc) => {
-    const storedFilename = path.basename(String(doc.stored_filename || doc.file_path || '').replace(/\\/g, '/'));
-    if (!storedFilename) return false;
-
-    try {
-        return fs.statSync(path.join(uploadsDir, storedFilename)).isFile();
-    } catch {
-        return false;
-    }
-};
+const { hasStoredFile } = require('../services/fileAvailability');
 
 exports.getDocuments = async (req, res) => {
     try {

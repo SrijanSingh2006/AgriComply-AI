@@ -1,5 +1,6 @@
 const db = require('../config/db'); // Database connection
 const Document = require('../models/Document');
+const { hasStoredFile } = require('../services/fileAvailability');
 
 exports.getComplianceStatus = async (req, res) => {
   try {
@@ -17,10 +18,18 @@ exports.getComplianceStatus = async (req, res) => {
     );
     
     // 2. Get User's Uploaded Documents from the Vault
-    const userDocs = await Document.findByUserId(userId);
+    const userDocs = (await Document.findByUserId(userId)).filter(hasStoredFile);
     
     // Create a simple array of tags the user HAS (e.g., ['PAN', 'LandRecord'])
-    const normalizeTag = (tag) => String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizeTag = (tag) => {
+      const normalized = String(tag || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      const aliases = {
+        udyamregistration: 'udyamcert',
+        stockstatement: 'stockstmt',
+        bankpassbook: 'bankstatement',
+      };
+      return aliases[normalized] || normalized;
+    };
     const userTags = new Set(userDocs.map(d => normalizeTag(d.tag)));
 
     // 3. Gap Analysis (Compare Rules vs. User Docs)

@@ -13,6 +13,7 @@ const authRoutes = require('./routes/authRoutes');
 const vaultRoutes = require('./routes/vaultRoutes');
 const trackARoutes = require('./routes/trackARoutes');
 const trackBRoutes = require('./routes/trackBRoutes');
+const authenticate = require('./middleware/authMiddleware');
 
 const app = express();
 
@@ -63,9 +64,9 @@ app.get('/health', async (req, res) => {
 
 // ML Proxy — forwards all /api/ml/* requests to the Python ML service
 // This way the frontend never needs to know the tunnel URL
-app.all('/api/ml/*', async (req, res) => {
-  const ML_URL = process.env.ML_URL || 'http://localhost:5001';
-  const targetPath = req.path.replace('/api/ml', '');
+app.all('/api/ml/*', authenticate, async (req, res) => {
+  const ML_URL = (process.env.ML_URL || 'http://localhost:5001').replace(/\/$/, '');
+  const targetPath = req.originalUrl.slice('/api/ml'.length);
   const targetUrl = `${ML_URL}${targetPath}`;
 
   try {
@@ -74,30 +75,35 @@ app.all('/api/ml/*', async (req, res) => {
       method: req.method,
       headers: {
         'Content-Type': req.headers['content-type'] || 'application/json',
-        'Bypass-Tunnel-Reminder': 'true',
+        ...(req.headers.accept ? { Accept: req.headers.accept } : {}),
       },
     };
 
     const proxyReq = lib.request(targetUrl, options, (proxyRes) => {
       res.status(proxyRes.statusCode);
-      Object.keys(proxyRes.headers).forEach(key => {
-        res.setHeader(key, proxyRes.headers[key]);
+      ['content-type', 'content-disposition', 'cache-control'].forEach((key) => {
+        if (proxyRes.headers[key]) res.setHeader(key, proxyRes.headers[key]);
       });
       proxyRes.pipe(res);
     });
 
+    proxyReq.setTimeout(120000, () => proxyReq.destroy(new Error('ML service request timed out')));
     proxyReq.on('error', (err) => {
       console.error('ML Proxy error:', err.message);
-      res.status(502).json({ error: 'ML service unavailable', detail: err.message });
+      if (!res.headersSent) res.status(502).json({ error: 'ML service unavailable. Please retry in a moment.' });
     });
 
-    if (req.method !== 'GET' && req.body) {
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      proxyReq.end();
+    } else if (req.is('application/json') || req.is('application/x-www-form-urlencoded')) {
       proxyReq.write(JSON.stringify(req.body));
+      proxyReq.end();
+    } else {
+      req.pipe(proxyReq);
     }
-    proxyReq.end();
   } catch (err) {
     console.error('ML Proxy exception:', err.message);
-    res.status(500).json({ error: 'Proxy failed', detail: err.message });
+    if (!res.headersSent) res.status(500).json({ error: 'Could not reach the ML service.' });
   }
 });
 

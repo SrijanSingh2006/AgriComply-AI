@@ -4,8 +4,8 @@ import io
 import json
 import hashlib
 import base64
+import hmac
 
-# Ensure the ml_service directory is always on the path
 _HERE = os.path.dirname(os.path.abspath(__file__))
 if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
@@ -19,7 +19,6 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageOps, ImageEnhance
 
-# --- EXISTING AI LOGIC ---
 from utils.file_reader import load_image_for_gemini
 from core.classifier import classify_document
 from core.extractor import extract_data
@@ -27,12 +26,10 @@ from core.gemini_client import gemini
 from utils.sanitizer import mask_pii
 from prompts.scheme_prompts import get_scheme_discovery_prompt
 
-# --- ADVANCED ML IMPORTS (SHAP, Forgery, RAG) ---
 from core.alt_credit_scorer import predict_farmer_score
 from core.forgery_detector import detect_forgery
 from core.rag_engine import query_rag_bot, ingest_pdf_to_vector_db
 
-# --- DATABASE MODELS ---
 from models import db, User, Profile, Document
 
 load_dotenv()
@@ -43,22 +40,18 @@ if api_key:
 
 app = Flask(__name__)
 
-# --- CORS & DATABASE SETUP ---
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'agricomply.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Connect the db to this Flask app
 db.init_app(app)
 
-# --- SECURE UPLOAD FOLDER SETUP ---
 UPLOAD_FOLDER = os.path.join(basedir, 'uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- SMART TAG NORMALIZER ---
 TAG_NORMALIZER = {
     "PASSPORTPHOTO": "PassportPhoto", "passport_photo": "PassportPhoto", "photo": "PassportPhoto",
     "AADHAAR": "Aadhaar", "aadhar": "Aadhaar", "uid": "Aadhaar",
@@ -111,12 +104,9 @@ def debug():
         "ai_test": ai_test
     })
 
-# ==========================================
-# 🛡️ ADVANCED CYBERSECURITY ROUTES
-# ==========================================
 
 @app.route('/api/security/keystrokes', methods=['POST'])
-def analyze_keystrokes(): #keystrokes biometrics
+def analyze_keystrokes():
     """
     Analyzes Flight Time and Dwell Time.
     Bots/Copy-Paste have near 0ms flight times or exactly 0 variance.
@@ -126,7 +116,7 @@ def analyze_keystrokes(): #keystrokes biometrics
     flight_times = data.get('flight_times', [])
     
     if len(flight_times) < 3:
-        return jsonify({"status": "human", "confidence": 100}) # Not enough data
+        return jsonify({"status": "human", "confidence": 100})
         
     try:
         avg_flight = mean(flight_times)
@@ -135,7 +125,7 @@ def analyze_keystrokes(): #keystrokes biometrics
         is_bot = avg_flight < 20 or var_flight < 5
         
         return jsonify({
-            "status": "bot" if is_bot else "human", #SHA256
+            "status": "bot" if is_bot else "human",
             "average_flight_ms": round(avg_flight, 2),
             "variance": round(var_flight, 2)
         })
@@ -160,11 +150,8 @@ def hash_document():
         "message": "Document Cryptographically Sealed."
     })
 
-# ==========================================
-# 📦 INTELLIGENT PRE-FLIGHT COMPLIANCE BUNDLER
-# ==========================================
 
-@app.route('/api/bundler/process-bundle', methods=['POST']) #Extraction Integration
+@app.route('/api/bundler/process-bundle', methods=['POST'])
 def process_bundle():
     """Takes multiple PDFs/Images, extracts entities via Gemini, and calculates consistency."""
     if 'documents' not in request.files:
@@ -173,19 +160,16 @@ def process_bundle():
     files = request.files.getlist('documents')
     extracted_names = {}
 
-    # 1. LIVE EXTRACTION PHASE
     for file in files:
         if file.filename == '':
             continue
             
-        # Save file temporarily so Gemini can read it (Handles PDFs and Images!)
         filename = secure_filename(file.filename)
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(file_path)
 
         try:
             print(f"🤖 Extracting data from {filename}...")
-            # Try fast local PDF extraction first for instant response
             local_name = None
             local_doc_type = filename
             
@@ -212,7 +196,6 @@ def process_bundle():
                 extracted_names[local_doc_type] = local_name
                 print(f"✅ Fast local extraction: {local_doc_type} -> {local_name}")
             elif client:
-                # Upload to Gemini for Multimodal reading
                 gemini_file = client.files.upload(file=file_path)
                 prompt = """
                 You are a strict KYC extraction AI.
@@ -223,7 +206,7 @@ def process_bundle():
                 {\"doc_type\": \"PAN Card\", \"name\": \"Rajesh Kumar\"}
                 """
                 response = client.models.generate_content(
-                    model='gemini-3.7-flash',
+                    model='gemini-3.6-flash',
                     contents=[prompt, gemini_file]
                 )
                 clean_json = response.text.replace("```json", "").replace("```", "").strip()
@@ -240,7 +223,6 @@ def process_bundle():
             print(f"Extraction notice for {filename}: {e}")
             extracted_names[filename] = "John Farmer"
 
-    # 2. MATHEMATICAL CONSISTENCY PHASE (Levenshtein Distance)
     def similar(a, b):
         return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
@@ -250,9 +232,8 @@ def process_bundle():
     for i in range(len(docs)):
         for j in range(i + 1, len(docs)):
             doc1, doc2 = docs[i], docs[j]
-            name1, name2 = extracted_names[doc1], extracted_names[doc2] #Adaptive Gaussian Thresholding (OpenCV)
+            name1, name2 = extracted_names[doc1], extracted_names[doc2]
             
-            # Skip math if extraction failed
             if name1 == "Extraction Failed" or name2 == "Extraction Failed":
                 continue
                 
@@ -285,19 +266,14 @@ def optimize_document():
     file_bytes = file.read()
     original_size_kb = len(file_bytes) / 1024
 
-    # Open with Pillow
     img = Image.open(io.BytesIO(file_bytes)).convert('RGB')
 
-    # Convert to grayscale for document cleaning
     gray = img.convert('L')
 
-    # Auto-contrast (equivalent to adaptive thresholding for shadow removal)
     cleaned = ImageOps.autocontrast(gray, cutoff=2)
 
-    # Mild sharpening to improve readability
     enhanced = ImageEnhance.Sharpness(cleaned).enhance(1.5)
 
-    # Compress to JPEG at quality 60 (same as before)
     out_buf = io.BytesIO()
     enhanced.save(out_buf, format='JPEG', quality=60, optimize=True)
     out_bytes = out_buf.getvalue()
@@ -313,9 +289,6 @@ def optimize_document():
         "status": "Ready for Government Portal Upload"
     })
 
-# ==========================================
-# 🕵️ EXISTING SEC & RAG LOGIC
-# ==========================================
 @app.route('/security/forgery-check', methods=['POST'])
 def check_forgery():
     if 'file' not in request.files:
@@ -336,10 +309,16 @@ def check_forgery():
 
 @app.route('/admin/ingest-pdf', methods=['POST'])
 def ingest_pdf():
+    ingest_token = os.getenv('ML_INGEST_TOKEN')
+    if not ingest_token:
+        return jsonify({"error": "Document indexing is disabled."}), 404
+    supplied_token = request.headers.get('X-ML-Admin-Token', '')
+    if not supplied_token or not hmac.compare_digest(supplied_token, ingest_token):
+        return jsonify({"error": "Access denied."}), 403
     if 'file' not in request.files:
         return jsonify({"error": "No file uploaded"}), 400
     file = request.files['file']
-    if file.filename == '':
+    if not file.filename or not file.filename.lower().endswith('.pdf'):
         return jsonify({"error": "No file selected"}), 400
         
     filename = secure_filename(file.filename)
@@ -364,9 +343,6 @@ def ask_legal_bot():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# ==========================================
-# ⚙️ EXISTING VISION & DISCOVERY LOGIC
-# ==========================================
 @app.route('/analyze', methods=['POST'])
 def analyze():
     if 'file' not in request.files:
@@ -509,14 +485,16 @@ def advanced_check():
     detailed_doc_contents = ""
     
     for d in raw_docs:
-        tag = d.get('tag', 'Unknown') if isinstance(d, dict) else str(d) #XGBoost Integration (Alt Credit Scorer)
+        tag = d.get('tag', 'Unknown') if isinstance(d, dict) else str(d)
         tag_clean = tag.strip().lower()
         normalized_tag = TAG_NORMALIZER.get(tag_clean.upper(), tag)
         doc_tags.append(normalized_tag)
         
         extracted_info = d.get('extracted_data', 'Data not available')
+        if not isinstance(extracted_info, str):
+            extracted_info = json.dumps(extracted_info, ensure_ascii=False)
         if not extracted_info or 'not available' in extracted_info.lower():
-            extracted_info = "Document is legally verified and present on file. (OCR data unavailable, assume document is valid)."
+            extracted_info = "No extracted document details were provided."
             
         detailed_doc_contents += f"\\n--- Document: {normalized_tag} ---\\n{extracted_info}\\n"
     
@@ -528,21 +506,21 @@ def advanced_check():
     - Amount: ₹{amount}
     - Tenure: {tenure} Years
     - Preferred Lender: {bank}
-    VERIFIED DOCUMENTS PRESENT ON FILE: [{doc_summary}]
-    Here is the data extracted from the user's documents via OCR:
+    DOCUMENT TAGS REPORTED BY THE VAULT (not independently verified): [{doc_summary}]
+    Any extracted text supplied by the application:
     {detailed_doc_contents}
     Task:
-    Evaluate their actual eligibility based on the NUMBERS and FACTS provided. 
+    Provide a preliminary estimate using only the numbers and facts provided. Do not invent income, bank balance, land title, or other financial details that are not present. Do not claim that any document is legally verified or that a lender has approved the request.
     CRITICAL RULES:
-    1. You MUST acknowledge that every document listed in \"VERIFIED DOCUMENTS PRESENT ON FILE\" is physically present and valid. DO NOT say they are missing Aadhaar, PAN, or any other listed document.
-    2. If their bank balance/income is too low for a ₹{amount} loan over {tenure} years, tell them they are NOT eligible.
-    3. If their project report costs don't match the loan amount, tell them they are NOT eligible.
+    1. Treat document tags as unverified metadata and state when details are unavailable.
+    2. Do not make a final eligibility or approval decision; explain what information a lender still needs.
+    3. Keep advice specific to supplied facts and distinguish estimates from verified facts.
     Output strictly valid JSON:
     {{
         \"eligible\": true/false,
         \"confidence_score\": 0-100,
-        \"reasoning\": \"Detailed analysis using specific numbers. Do NOT claim verified documents are missing.\",
-        \"suggestion\": \"Specific actionable advice based on their actual financials.\"
+        \"reasoning\": \"Preliminary assessment using only supplied information; explain important missing details.\",
+        \"suggestion\": \"Next step to verify the request with the lender.\"
     }}
     """
     
@@ -559,9 +537,9 @@ def advanced_check():
 
     return jsonify({
         "eligible": amount <= 500000,
-        "confidence_score": 85 if amount <= 500000 else 45,
-        "reasoning": f"Applicant has verified land title and identity records. Loan evaluated for ₹{amount:,.0f} across {tenure} years under {bank} credit policy.",
-        "suggestion": "Maintain continuous on-time utility and crop input repayments to preserve tier-1 credit rating.",
+        "confidence_score": 35,
+        "reasoning": f"The fallback screen reviewed a request of ₹{amount:,.0f} over {tenure} years for {bank}. It did not verify income, bank balances, land title, or current lender rules, so this result is only a rough estimate.",
+        "suggestion": "Confirm current eligibility and required documents directly with the lender before making financial decisions.",
         "analyzed_docs_count": len(doc_tags)
     })
 
