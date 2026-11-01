@@ -3,9 +3,8 @@
  * Usage: node setup-db.js
  */
 const Database = require('better-sqlite3');
-const path = require('path');
+const { dbPath } = require('./config/storage');
 
-const dbPath = path.join(__dirname, 'agricomply.db');
 const db = new Database(dbPath);
 
 console.log('📦 Setting up AgriComply SQLite database...\n');

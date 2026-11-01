@@ -1,53 +1,84 @@
-/**
- * SQLite database adapter using better-sqlite3.
- *
- * Provides the same execute() interface previously used by the PostgreSQL adapter,
- * so all models (User.js, Document.js, Rules.js) work without any changes.
- * Uses the local agricomply.db file.
- */
-const Database = require('better-sqlite3');
-const path = require('path');
+const { dbPath } = require('./storage');
 
-const dbPath = path.join(__dirname, '..', 'agricomply.db');
-const sqlite = new Database(dbPath);
+let ready = Promise.resolve();
+let db;
 
-// Enable WAL mode for better concurrent read performance
-sqlite.pragma('journal_mode = WAL');
+if (process.env.DATABASE_URL) {
+  const { Pool } = require('pg');
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.PGPOOL_MAX || 3),
+    connectionTimeoutMillis: 10000,
+  });
 
-const db = {
-  /**
-   * Execute a SQL query.
-   * Returns [rows] for SELECT, [{ insertId, affectedRows }] for others.
-   * Compatible with the interface used by all models.
-   * Supports ? positional params natively (SQLite style).
-   */
-  execute: async (sql, params = []) => {
-    try {
-      const trimmed = sql.trim().toUpperCase();
+  pool.on('error', (err) => {
+    console.error('Unexpected PostgreSQL pool error:', err.message);
+  });
 
-      if (trimmed.startsWith('SELECT')) {
-        const stmt = sqlite.prepare(sql);
-        const rows = stmt.all(...params);
-        return [rows];
-      } else if (trimmed.startsWith('INSERT')) {
-        // Strip RETURNING clause — not supported in older SQLite builds
-        const cleanSql = sql.replace(/\s+RETURNING\s+\w+/i, '');
-        const stmt = sqlite.prepare(cleanSql);
-        const info = stmt.run(...params);
-        return [{ insertId: info.lastInsertRowid, affectedRows: info.changes }];
-      } else {
-        const stmt = sqlite.prepare(sql);
-        const info = stmt.run(...params);
-        return [{ insertId: 0, affectedRows: info.changes }];
+  db = {
+    isPostgres: true,
+    raw: pool,
+    setReady(promise) {
+      ready = promise;
+    },
+    waitReady: () => ready,
+    execute: async (sql, params = []) => {
+      try {
+        await ready;
+        let index = 0;
+        const postgresSql = sql.replace(/\?/g, () => `$${++index}`);
+        const result = await pool.query(postgresSql, params);
+
+        if (/^\s*(SELECT|WITH)\b/i.test(sql)) {
+          return [result.rows];
+        }
+
+        return [{
+          insertId: result.rows?.[0]?.id || 0,
+          affectedRows: result.rowCount || 0,
+        }];
+      } catch (err) {
+        console.error('DB Error:', err.message, '| SQL:', sql);
+        throw err;
       }
-    } catch (err) {
-      console.error('DB Error:', err.message, '| SQL:', sql);
-      throw err;
-    }
-  },
+    },
+  };
+} else {
+  const Database = require('better-sqlite3');
+  const sqlite = new Database(dbPath);
+  sqlite.pragma('journal_mode = WAL');
 
-  // Expose raw sqlite instance for advanced usage
-  raw: sqlite,
-};
+  db = {
+    isPostgres: false,
+    raw: sqlite,
+    setReady(promise) {
+      ready = promise;
+    },
+    waitReady: () => ready,
+    execute: async (sql, params = []) => {
+      try {
+        await ready;
+        const trimmed = sql.trim().toUpperCase();
+
+        if (trimmed.startsWith('SELECT')) {
+          const stmt = sqlite.prepare(sql);
+          return [stmt.all(...params)];
+        }
+
+        if (trimmed.startsWith('INSERT')) {
+          const cleanSql = sql.replace(/\s+RETURNING\s+\w+/i, '');
+          const info = sqlite.prepare(cleanSql).run(...params);
+          return [{ insertId: info.lastInsertRowid, affectedRows: info.changes }];
+        }
+
+        const info = sqlite.prepare(sql).run(...params);
+        return [{ insertId: 0, affectedRows: info.changes }];
+      } catch (err) {
+        console.error('DB Error:', err.message, '| SQL:', sql);
+        throw err;
+      }
+    },
+  };
+}
 
 module.exports = db;

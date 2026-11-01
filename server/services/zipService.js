@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
 const Document = require('../models/Document');
+const { uploadsDir } = require('../config/storage');
 
 exports.createBundle = async (userId, docTags, outputName, res) => {
   // 1. Fetch all file records for this user
@@ -28,9 +29,11 @@ exports.createBundle = async (userId, docTags, outputName, res) => {
   // 6. Append files from local storage to the ZIP
   docsToZip.forEach(doc => {
     // Ensure the file actually exists on disk before adding
-    if (fs.existsSync(doc.file_path)) {
+    const fileName = doc.file_path || doc.filename;
+    const filePath = path.isAbsolute(fileName) ? fileName : path.join(uploadsDir, fileName);
+    if (fs.existsSync(filePath)) {
       // Add file to zip, renaming it to something clean (e.g., "PAN.pdf")
-      archive.file(doc.file_path, { name: `${doc.tag}${path.extname(doc.file_name)}` });
+      archive.file(filePath, { name: `${doc.tag}${path.extname(fileName)}` });
     } else {
       console.warn(`File missing from disk: ${doc.file_path}`);
     }

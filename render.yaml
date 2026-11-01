@@ -27,9 +27,10 @@ services:
     plan: free
     buildCommand: npm install
     startCommand: node app.js
+    healthCheckPath: /health
     envVars:
       - key: JWT_SECRET
-        value: agricomply_jwt_secret_key_2026
+        generateValue: true
       - key: ML_URL
         value: https://agricomply-ml.onrender.com
       - key: PORT

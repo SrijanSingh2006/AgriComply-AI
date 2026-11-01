@@ -1,8 +1,8 @@
-const Document = require('../models/Document');
+﻿const Document = require('../models/Document');
 const fs = require('fs');
 const path = require('path');
+const { uploadsDir } = require('../config/storage');
 
-// 1. Get All Documents for User
 exports.getDocuments = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -14,7 +14,6 @@ exports.getDocuments = async (req, res) => {
     }
 };
 
-// 2. Upload New Document
 exports.uploadDocument = async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file uploaded" });
@@ -22,8 +21,8 @@ exports.uploadDocument = async (req, res) => {
         const userId = req.user.id;
         const { tag } = req.body;
         
-        // Save to DB
-        // Note: Our updated Model maps this correctly to 'file_path'
+        
+        
         await Document.create({
             user_id: userId,
             filename: req.file.filename, 
@@ -34,26 +33,46 @@ exports.uploadDocument = async (req, res) => {
 
         res.status(201).json({ message: "Upload successful" });
     } catch (err) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error("Upload Error:", err);
         res.status(500).json({ error: "Database error during upload" });
     }
 };
 
-// 3. Delete Document
+exports.downloadDocument = async (req, res) => {
+    try {
+        const doc = await Document.findById(req.params.id);
+        if (!doc || String(doc.user_id) !== String(req.user.id)) {
+            return res.status(404).json({ error: "File not found" });
+        }
+
+        const fileName = path.basename(doc.filename || doc.file_path || '');
+        if (!fileName) return res.status(404).json({ error: "File not found" });
+
+        const filePath = path.join(uploadsDir, fileName);
+        if (!fs.existsSync(filePath)) return res.status(404).json({ error: "File is no longer available" });
+
+        return res.download(filePath, fileName);
+    } catch (err) {
+        console.error("Download Error:", err);
+        return res.status(500).json({ error: "Download failed" });
+    }
+};
+
 exports.deleteDocument = async (req, res) => {
     try {
         const fileId = req.params.id;
         
-        // Find file in DB
+        
         const doc = await Document.findById(fileId);
-        if (!doc) return res.status(404).json({ error: "File not found" });
+        if (!doc || String(doc.user_id) !== String(req.user.id)) return res.status(404).json({ error: "File not found" });
 
-        // FIX: Safely get the filename (handle 'filename' OR 'file_path')
+        
         const fileName = doc.filename || doc.file_path; 
 
         if (fileName) {
-            // Delete actual file from 'uploads' folder
-            const filePath = path.join(__dirname, '../uploads', fileName);
+            
+            const filePath = path.join(uploadsDir, fileName);
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
@@ -61,7 +80,7 @@ exports.deleteDocument = async (req, res) => {
             console.warn("File record found but no filename/path associated.");
         }
 
-        // Delete entry from DB
+        
         await Document.delete(fileId);
 
         res.json({ message: "Document deleted successfully" });
@@ -71,29 +90,31 @@ exports.deleteDocument = async (req, res) => {
     }
 };
 
-// 4. Replace Document
 exports.replaceDocument = async (req, res) => {
     try {
         const fileId = req.params.id;
         
         if (!req.file) return res.status(400).json({ error: "No new file uploaded" });
 
-        // Find old file
+        
         const oldDoc = await Document.findById(fileId);
-        if (!oldDoc) return res.status(404).json({ error: "Original file not found" });
+        if (!oldDoc || String(oldDoc.user_id) !== String(req.user.id)) {
+            if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+            return res.status(404).json({ error: "Original file not found" });
+        }
 
-        // FIX: Safely get the old filename
+        
         const oldFileName = oldDoc.filename || oldDoc.file_path;
 
         if (oldFileName) {
-            // Delete old file from disk
-            const oldPath = path.join(__dirname, '../uploads', oldFileName);
+            
+            const oldPath = path.join(uploadsDir, oldFileName);
             if (fs.existsSync(oldPath)) {
                 fs.unlinkSync(oldPath);
             }
         }
 
-        // Update DB with new filename and date
+        
         await Document.update(fileId, {
             filename: req.file.filename,
             type: req.file.mimetype,

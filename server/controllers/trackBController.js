@@ -1,7 +1,6 @@
-const Document = require('../models/Document');
+﻿const Document = require('../models/Document');
 const axios = require('axios');
 
-// Use ML_URL (set by Render) or PYTHON_URL (legacy) or 127.0.0.1 for local dev
 const PYTHON_SERVICE_URL = process.env.ML_URL || process.env.PYTHON_URL || 'http://127.0.0.1:5001';
 
 exports.getEligibleSchemes = async (req, res) => {
@@ -30,7 +29,7 @@ exports.getEligibleSchemes = async (req, res) => {
       console.log("ML service fallback for schemes:", apiErr.message);
     }
 
-    // High-quality fallback if ML service takes longer than 8s
+    
     const fallbackData = {
       schemes: [
         { name: 'PM-KISAN (Income Support)', type: 'Central Govt', description: '₹6,000 annual financial assistance in 3 installments.', required_docs: ['Aadhaar', 'LandRecord', 'BankStatement'], match_score: 100, is_eligible: true },
@@ -51,10 +50,9 @@ exports.getEligibleSchemes = async (req, res) => {
   }
 };
 
-// --- NEW: Eligibility Check Bridge ---
 exports.checkLoanEligibility = async (req, res) => {
   try {
-    // 1. We expect the FULL loan object in body.loanDetails
+    
     const { loanDetails } = req.body; 
     
     const userId = req.user.id;
@@ -63,7 +61,7 @@ exports.checkLoanEligibility = async (req, res) => {
     const userDocs = await Document.findByUserId(userId);
     const userTags = userDocs.map(d => d.tag);
 
-    // 2. Pass everything to Python
+    
     const response = await axios.post(`${PYTHON_SERVICE_URL}/check-eligibility`, {
       target_loan: loanDetails, 
       user_docs: userTags,

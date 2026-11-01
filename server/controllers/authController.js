@@ -1,18 +1,18 @@
-const User = require('../models/User');
+﻿const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   try {
-    // Now accepting 'role' from frontend
+    
     const { name, email, password, role } = req.body;
     
-    // Default to 'Farmer' if no role provided
+    
     const userRole = role || 'Farmer'; 
 
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Pass role to the model
+    
     await User.create(name, email, hashedPassword, userRole);
     
     res.status(201).json({ message: 'User registered successfully' });
@@ -21,7 +21,6 @@ exports.register = async (req, res) => {
   }
 };
 
-// ... keep login function same, but ensure it returns the role ...
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -31,7 +30,7 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
-    // Include role in Token and Response
+    
     const jwtSecret = process.env.JWT_SECRET || 'agricomply_super_secret_jwt_key_2026';
     const token = jwt.sign({ id: user.id, role: user.role }, jwtSecret, { expiresIn: '24h' });
     

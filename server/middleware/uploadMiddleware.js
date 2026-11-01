@@ -1,16 +1,10 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-
-// Ensure uploads folder exists
-const uploadDir = 'uploads/';
-if (!fs.existsSync(uploadDir)){
-    fs.mkdirSync(uploadDir);
-}
+const { uploadsDir } = require('../config/storage');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     // We expect the frontend to send a 'tag' in the body, but multer processes files first.

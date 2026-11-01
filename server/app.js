@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const https = require('https');
 const http = require('http');
+const { uploadsDir, isVercel } = require('./config/storage');
 require('dotenv').config();
+const db = require('./config/db');
 
 // Auto-initialize database on startup (safe to run multiple times)
 require('./setup-db-init');
@@ -22,7 +23,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     // 2. Allow specific local development ports
-    const allowedLocal = ['http://localhost:5173', 'http://localhost:3000'];
+    const allowedLocal = ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'];
     
     // 3. Allow any sub-domain of vercel.app or onrender.com
     const isVercel = origin.endsWith('.vercel.app');
@@ -40,9 +41,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Static file serving for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/vault', vaultRoutes);
@@ -53,8 +51,14 @@ app.use('/api/compliance', trackARoutes);
 app.use('/api/growth', trackBRoutes);
 
 // Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'Server is running', database: 'PostgreSQL' });
+app.get('/health', async (req, res) => {
+  try {
+    await db.waitReady();
+    const database = db.isPostgres ? 'PostgreSQL' : (isVercel ? 'SQLite (temporary)' : 'SQLite');
+    res.json({ status: 'Server is running', database });
+  } catch (err) {
+    res.status(503).json({ status: 'Database unavailable' });
+  }
 });
 
 // ML Proxy — forwards all /api/ml/* requests to the Python ML service
